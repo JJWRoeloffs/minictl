@@ -18,4 +18,5 @@ tests = ["pytest"]
 
 [tool.maturin]
 python-source = "python"
-features = ["pyo3/extension-module"]
+features = ["python"]
+profile = "release"

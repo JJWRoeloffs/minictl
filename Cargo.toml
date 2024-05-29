@@ -9,6 +9,9 @@ edition = "2021"
 name = "minictl"
 crate-type = ["lib", "cdylib"]
 
+[features]
+python = ["dep:pyo3"]
+
 [dependencies]
-pyo3 = "0.21.2"
+pyo3 = { version = "0.21.2", optional = true }
 rowan = "0.15.15"
