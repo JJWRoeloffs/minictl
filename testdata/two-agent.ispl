@@ -1,0 +1,77 @@
+Agent Environment
+    Vars:
+       pos: {pos0, pos1, pos2};
+    end Vars
+    Actions = {none};
+    Protocol:
+        Other: {none};
+    end Protocol
+    Evolution:
+        pos = pos0 if (Agent1.Action=nil and Agent2.Action=nil and pos=pos0) or
+                      (Agent1.Action=push1 and Agent2.Action=push2 and pos=pos0) or
+                      (Agent1.Action=push1 and Agent2.Action=nil and pos=pos2) or
+                      (Agent1.Action=nil  and Agent2.Action=push2 and pos=pos1); 
+        pos = pos1 if (Agent1.Action=nil and Agent2.Action=nil and pos=pos1) or
+                      (Agent1.Action=push1 and Agent2.Action=push2 and pos=pos1) or
+                      (Agent1.Action=push1 and Agent2.Action=nil and pos=pos0) or
+                      (Agent1.Action=nil and Agent2.Action=push2 and pos=pos2); 
+        pos = pos2 if (Agent1.Action=nil and Agent2.Action=nil and pos=pos2) or
+                      (Agent1.Action=push1 and Agent2.Action=push2 and pos=pos2) or
+                      (Agent1.Action=push1 and Agent2.Action=nil and pos=pos1) or
+                      (Agent1.Action=nil and Agent2.Action=push2 and pos=pos0);
+    end Evolution
+end Agent
+
+Agent Agent1
+    Lobsvars = {pos};
+    Vars:
+        alive: boolean;
+    end Vars 
+    Actions = {push1,nil};
+    Protocol:
+        (alive=true) : {push1,nil}; 
+    end Protocol
+    Evolution:
+       alive= true if alive= true;
+    end Evolution
+end Agent
+
+Agent Agent2
+    Lobsvars = {pos};
+    Vars:
+        alive: boolean;
+    end Vars
+    Actions = {push2,nil};
+    Protocol:
+       (alive= true): {push2,nil};
+    end Protocol
+    Evolution:
+       alive= true if alive= true;
+    end Evolution
+end Agent
+
+
+Evaluation
+        pos1 if Environment.pos  = pos1;
+        pos2 if Environment.pos  = pos2;
+        pos0 if Environment.pos  = pos0;
+end Evaluation
+
+InitStates
+        (Environment.pos = pos0) and (Agent1.alive= true) and (Agent2.alive= true);
+end InitStates
+
+Groups
+        g1 = {Agent1};
+        g2 = {Agent2};
+        g3 = {Agent1, Agent2};
+end Groups
+
+Fairness
+end Fairness
+
+Formulae
+<g3>X <g3> G pos2;
+<g1>X !pos1;
+end Formulae
+
