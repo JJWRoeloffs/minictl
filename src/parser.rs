@@ -7,10 +7,16 @@ use std::cell::RefCell;
 pub enum SyntaxKind {
     TOKEN_WHITESPACE = 0,
     TOKEN_COMMENT, // Comments with -- to newline
-    TOKEN_ERROR,   // Anything that cannot be properly parsed.
+
+    TOKEN_ERR_UNEXPECTED_KEYWORD, // A keyword in a place there shouldn't be one.
+    TOKEN_ERR_EXPECTED_NAME, // A place where a name (like that of an agent or variable), was expected
+    TOKEN_ERR_INVALID_CLOSE_BLOCK, // An end that doesn't end what it should.
+    TOKEN_ERR_UNEXPECTED_TOPLEVEL, // Something at toplevel that shouldn't be there.
+    TOKEN_ERR_UNEXPECTED_BLOCK, // Something inner block that shouldn't be there.
+    TOKEN_ERR_UNDEFINED_NAME, // Something at toplevel that shouldn't be there.
+    TOKEN_ERROR,             // Anything else that cannot be properly parsed.
 
     TOKEN_VARNAME, // Any nondescript variable
-    TOKEN_NONE,    // none
 
     TOKEN_L_PAREN,   // (
     TOKEN_R_PAREN,   // )
@@ -24,30 +30,46 @@ pub enum SyntaxKind {
     TOKEN_OR,  // or
     TOKEN_IF,  // if
 
-    TOKEN_NEG,   // !
-    TOKEN_PLUS,  // +
-    TOKEN_MINUS, // -
-    TOKEN_LE,    // <=
-    TOKEN_LT,    // <
-    TOKEN_GE,    // >=
-    TOKEN_GT,    // >
-    TOKEN_EQ,    // =
-    TOKEN_NEQ,   // !=
+    TOKEN_NEG,    // !
+    TOKEN_LE,     // <=
+    TOKEN_LT,     // <
+    TOKEN_GE,     // >=
+    TOKEN_GT,     // >
+    TOKEN_EQ,     // =
+    TOKEN_NEQ,    // <>
+    TOKEN_PLUS,   // +
+    TOKEN_MINUS,  // -
+    TOKEN_TIMES,  // *
+    TOKEN_DEVIDE, // /
 
     TOKEN_IMPLIES_R,       // ->
     TOKEN_IMPLIES_L,       // <-
     TOKEN_IMPLIES_BI,      // <->
+    TOKEN_BITAND,          // &
+    TOKEN_BITOR,           // |
+    TOKEN_BITNOT,          // ~
+    TOKEN_BITXOR,          // ^
     TOKEN_TRUE,            // true
     TOKEN_FALSE,           // false
     TOKEN_BOOLEAN_LITERAL, // boolean
 
-    TOKEN_X, // X (Modal operator)
-    TOKEN_F, // F (Modal operator)
-    TOKEN_G, // G (Modal operator)
-    TOKEN_U, // U (Modal operator)
-    TOKEN_A, // A (Modal operator)
-    TOKEN_E, // E (Modal operator)
-    TOKEN_K, // K (Modal operator)
+    TOKEN_AG,  // AG (Modal Operator)
+    TOKEN_EG,  // EG (Modal Operator)
+    TOKEN_AX,  // AX (Modal Operator)
+    TOKEN_EX,  // EX (Modal Operator)
+    TOKEN_X,   // X (Modal Operator)
+    TOKEN_F,   // F (Modal Operator)
+    TOKEN_G,   // G (Modal Operator)
+    TOKEN_AF,  // AF (Modal Operator)
+    TOKEN_EF,  // EF (Modal Operator)
+    TOKEN_A,   // A (Modal Operator)
+    TOKEN_E,   // E (Modal Operator)
+    TOKEN_U,   // UNTIL (Modal Operator)
+    TOKEN_K,   // K (Modal Operator)
+    TOKEN_GK,  // GK (Modal Operator)
+    TOKEN_GCK, // GCK (Modal Operator)
+    TOKEN_O,   // O (Modal Operator)
+    TOKEN_DK,  // DK (Modal Operator)
 
     TOKEN_GROUPNAME, // A group in Groups, or any variable previously defined as such.
     TOKEN_START_GROUPEXPR, // < of group expression, e.g. <g1>Xp
@@ -65,14 +87,26 @@ pub enum SyntaxKind {
     TOKEN_SET_OPENCURLY, // { for sets (which is, anything that is not a group or enum)
     TOKEN_SET_CLOSECURLY, // { for sets (which is, anything that is not a group or enum)
 
-    TOKEN_INNER_BLOCK_NAME,        // The name of an inner block. e.g. Vars:
-    TOKEN_BEGIN_INNER_BLOCK,       // The : of an inner block
-    TOKEN_END_INNER_BLOCK,         // The "end" of an inner bock
-    TOKEN_END_INNER_BLOCK_NAME,    // The name after the end of the inner block
-    TOKEN_INNER_BLOCK_ASSIGN,      // = in an assignment, e.g. Actions = {none}
-    TOKEN_INNER_BLOCK_ASSIGN_NAME, // the name of an inner block assigned with =
+    TOKEN_ENVIRONMENT, // Reserved agent name for an environment.
+    TOKEN_OTHER,       // The Other: statement in blocks
+    TOKEN_ACTION,      // The Action statement in blocks
+    TOKEN_NONE,        // The none statement in blocks.
 
-    TOKEN_SEMANTICS,            // The Semantics=something; statement at the start.
+    TOKEN_REDSTATES,            // RedStates (Inner block name)
+    TOKEN_GREENSTATES,          // GreenStates (Inner block name)
+    TOKEN_ACTIONS,              // Actions (Inner block name)
+    TOKEN_PROTOCOL,             // Protocol (Inner block name)
+    TOKEN_EVOLUTION,            // Evolution (Inner block name)
+    TOKEN_OBSVARS,              // Obsvars (Inner block name)
+    TOKEN_LOBSVARS,             // Lobsvars (Inner block name)
+    TOKEN_VARS,                 // Vars (Inner block name)
+    TOKEN_BEGIN_INNER_BLOCK,    // The : of an inner block
+    TOKEN_END_INNER_BLOCK,      // The "end" of an inner bock
+    TOKEN_END_INNER_BLOCK_NAME, // The name after the end of the inner block
+    TOKEN_INNER_BLOCK_ASSIGN,   // = in an assignment, e.g. Actions = {none}
+
+    TOKEN_SEMANTICS_SA,         // Semantics=SingleAssignment;
+    TOKEN_SEMANTICS_MA,         // Semantics=MultiAssignment;
     TOKEN_BEGIN_AGENT,          // The start "Agent" of an Agent block.
     TOKEN_AGENT_NAME,           // The name an agent has.
     TOKEN_BEGIN_EVALUATION,     // The start "Evaluation"
@@ -97,13 +131,72 @@ pub enum SyntaxKind {
 
     ROOT,
 }
+impl SyntaxKind {
+    pub fn is_err(&self) -> bool {
+        match self {
+            TOKEN_ERR_UNEXPECTED_KEYWORD => true,
+            TOKEN_ERR_EXPECTED_NAME => true,
+            TOKEN_ERR_INVALID_CLOSE_BLOCK => true,
+            TOKEN_ERR_UNEXPECTED_TOPLEVEL => true,
+            TOKEN_ERR_UNEXPECTED_BLOCK => true,
+            TOKEN_ERR_UNDEFINED_NAME => true,
+            TOKEN_ERROR => true,
+            _ => false,
+        }
+    }
+}
 use SyntaxKind::*;
 
 fn is_valid_start_var_char(c: &char) -> bool {
     c.is_alphabetic()
 }
 fn is_valid_var_char(c: &char) -> bool {
-    c.is_alphanumeric() || matches!(c, '_' | '-' | '$' | '^' | '@' | '#')
+    c.is_alphanumeric() || matches!(c, '_' | '$' | '@' | '#')
+}
+
+fn parse_inner_block_name(var: &str) -> SyntaxKind {
+    match var {
+        "RedStates" => TOKEN_REDSTATES,
+        "GreenStates" => TOKEN_GREENSTATES,
+        "Actions" => TOKEN_ACTIONS,
+        "Action" => TOKEN_ACTION,
+        "Protocol" => TOKEN_PROTOCOL,
+        "Evolution" => TOKEN_EVOLUTION,
+        "Obsvars" => TOKEN_OBSVARS,
+        "Lobsvars" => TOKEN_LOBSVARS,
+        "Vars" => TOKEN_VARS,
+        _ => TOKEN_ERR_UNEXPECTED_BLOCK,
+    }
+}
+
+fn parse_var(var: &str, expected: SyntaxKind) -> SyntaxKind {
+    match var {
+        "Semantics" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "MultiAssignment" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "SingleAssignment" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "MA" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "SA" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Agent" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Evaluation" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "InitStates" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Groups" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Fairness" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Formulae" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "RedStates" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "GreenStates" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Actions" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Protocol" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Evolution" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Obsvars" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Lobsvars" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Vars" => TOKEN_ERR_UNEXPECTED_KEYWORD,
+        "Environment" => TOKEN_ENVIRONMENT,
+
+        "Action" => TOKEN_ACTION,
+        "Other" => TOKEN_OTHER,
+        "none" => TOKEN_NONE,
+        _ => expected,
+    }
 }
 
 impl From<SyntaxKind> for rowan::SyntaxKind {
@@ -266,13 +359,17 @@ impl Tokenizer<'_> {
             self.pop_ctx(Context::AgentDef);
             self.ctx.push(Context::AgentBlock);
             match self.state.consume_var() {
+                Some("Environment") => {
+                    self.agentnames.borrow_mut().push("Environment".to_string());
+                    return Some(TOKEN_ENVIRONMENT);
+                }
                 Some(name) => {
                     self.agentnames.borrow_mut().push(name.to_string());
                     return Some(TOKEN_AGENT_NAME);
                 }
                 None => {
                     self.state.consume_err();
-                    return Some(TOKEN_ERROR);
+                    return Some(TOKEN_ERR_EXPECTED_NAME);
                 }
             }
         }
@@ -285,10 +382,10 @@ impl Tokenizer<'_> {
                         self.pop_ctx(Context::AgentBlock);
                         return Some(TOKEN_END_OUTER_BLOCK_NAME);
                     }
-                    Some(_) => return Some(TOKEN_ERROR),
+                    Some(_) => return Some(TOKEN_ERR_INVALID_CLOSE_BLOCK),
                     None => {
                         self.state.consume_err();
-                        return Some(TOKEN_ERROR);
+                        return Some(TOKEN_ERR_EXPECTED_NAME);
                     }
                 },
                 Some(Context::OuterBlock { name }) => match self.state.consume_var() {
@@ -296,10 +393,10 @@ impl Tokenizer<'_> {
                         self.ctx.pop();
                         return Some(TOKEN_END_OUTER_BLOCK_NAME);
                     }
-                    Some(_) => return Some(TOKEN_ERROR),
+                    Some(_) => return Some(TOKEN_ERR_INVALID_CLOSE_BLOCK),
                     None => {
                         self.state.consume_err();
-                        return Some(TOKEN_ERROR);
+                        return Some(TOKEN_ERR_EXPECTED_NAME);
                     }
                 },
                 Some(Context::InnerBlock { name }) => match self.state.consume_var() {
@@ -307,10 +404,10 @@ impl Tokenizer<'_> {
                         self.ctx.pop();
                         return Some(TOKEN_END_INNER_BLOCK_NAME);
                     }
-                    Some(_) => return Some(TOKEN_ERROR),
+                    Some(_) => return Some(TOKEN_ERR_INVALID_CLOSE_BLOCK),
                     None => {
                         self.state.consume_err();
-                        return Some(TOKEN_ERROR);
+                        return Some(TOKEN_ERR_EXPECTED_NAME);
                     }
                 },
                 _ => {
@@ -327,7 +424,22 @@ impl Tokenizer<'_> {
                 Some("Semantics") => {
                     self.state.consume_while(|c| c != ';');
                     self.next()?;
-                    return Some(TOKEN_SEMANTICS);
+                    return match self
+                        .state
+                        .str_since(start)
+                        .chars()
+                        .filter(|c| !c.is_whitespace())
+                        .collect::<String>()
+                        .as_str()
+                    {
+                        // Yes, this is also hardcoded in MCMAS.
+                        // I wouldn't have done it like this otherwise.
+                        "Semantics=SA;" => Some(TOKEN_SEMANTICS_SA),
+                        "Semantics=SingleAssignment;" => Some(TOKEN_SEMANTICS_SA),
+                        "Semantics=MA;" => Some(TOKEN_SEMANTICS_MA),
+                        "Semantics=MultiAssignment;" => Some(TOKEN_SEMANTICS_MA),
+                        _ => Some(TOKEN_ERR_UNEXPECTED_TOPLEVEL),
+                    };
                 }
                 Some("Agent") => {
                     self.ctx.push(Context::AgentDef);
@@ -355,7 +467,7 @@ impl Tokenizer<'_> {
                 }
                 _ => {
                     self.state.consume_err();
-                    return Some(TOKEN_ERROR);
+                    return Some(TOKEN_ERR_UNEXPECTED_TOPLEVEL);
                 }
             }
         }
@@ -365,6 +477,10 @@ impl Tokenizer<'_> {
                 self.next().unwrap();
                 TOKEN_DOUBLEDOT
             }
+            '&' => TOKEN_BITAND,
+            '|' => TOKEN_BITOR,
+            '~' => TOKEN_BITNOT,
+            '^' => TOKEN_BITXOR,
             '.' => TOKEN_DOT,
             '(' => TOKEN_L_PAREN,
             ')' => TOKEN_R_PAREN,
@@ -404,10 +520,6 @@ impl Tokenizer<'_> {
             ':' => TOKEN_COLON,
             ';' => TOKEN_SEMICOLON,
             ',' => TOKEN_COMMA,
-            '!' if self.state.peek() == Some('=') => {
-                self.next().unwrap();
-                TOKEN_NEQ
-            }
             '!' => TOKEN_NEG,
             '<' if self.state.peek2() == (Some('-'), Some('>')) => {
                 self.next().unwrap();
@@ -422,6 +534,10 @@ impl Tokenizer<'_> {
                 self.next().unwrap();
                 TOKEN_LE
             }
+            '<' if self.state.peek() == Some('>') => {
+                self.next().unwrap();
+                TOKEN_NEQ
+            }
             '>' if self.state.peek() == Some('=') => {
                 self.next().unwrap();
                 TOKEN_GE
@@ -432,6 +548,8 @@ impl Tokenizer<'_> {
             }
             '-' => TOKEN_MINUS,
             '+' => TOKEN_PLUS,
+            '*' => TOKEN_TIMES,
+            '/' => TOKEN_DEVIDE,
             '=' if self.ctx.last() == Some(&Context::OuterBlock { name: "Groups" }) => {
                 TOKEN_GROUPS_ASSIGN
             }
@@ -487,16 +605,34 @@ impl Tokenizer<'_> {
                 self.state.consume_while(|c| c.is_ascii_digit());
                 TOKEN_INT_LITERAL
             }
-            'X' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_X,
-            'F' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_F,
-            'G' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_G,
-            'U' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_U,
-            'A' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_A,
-            'E' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_E,
-            'K' if self.ctx.last() == Some(&Context::OuterBlock { name: "Formulae" }) => TOKEN_K,
             character if is_valid_start_var_char(&character) => {
                 self.state.consume_while(|c| is_valid_var_char(&c));
                 match self.state.str_since(start) {
+                    "AG" => TOKEN_AG,
+                    "EG" => TOKEN_EG,
+                    "AX" => TOKEN_AX,
+                    "EX" => TOKEN_EX,
+                    "X" => TOKEN_X,
+                    "F" => TOKEN_F,
+                    "G" => TOKEN_G,
+                    "AF" => TOKEN_AF,
+                    "EF" => TOKEN_EF,
+                    "A" => TOKEN_A,
+                    "E" => TOKEN_E,
+                    "U" => TOKEN_U,
+                    "K" => TOKEN_K,
+                    "GK" => TOKEN_GK,
+                    "GCK" => TOKEN_GCK,
+                    "O" => TOKEN_O,
+                    "DK" => TOKEN_DK,
+
+                    "and" => TOKEN_AND,
+                    "or" => TOKEN_OR,
+                    "if" => TOKEN_IF,
+                    "true" => TOKEN_TRUE,
+                    "false" => TOKEN_FALSE,
+                    "boolean" => TOKEN_BOOLEAN_LITERAL,
+
                     "end" => match self.ctx.last() {
                         Some(Context::AgentBlock) => {
                             self.ctx.push(Context::BlockEnded);
@@ -510,61 +646,54 @@ impl Tokenizer<'_> {
                             self.ctx.push(Context::BlockEnded);
                             TOKEN_END_INNER_BLOCK
                         }
-                        _ => TOKEN_ERROR,
+                        _ => TOKEN_ERR_INVALID_CLOSE_BLOCK,
                     },
-                    "none" => TOKEN_NONE,
-                    "and" => TOKEN_AND,
-                    "or" => TOKEN_OR,
-                    "if" => TOKEN_IF,
-                    "true" => TOKEN_TRUE,
-                    "false" => TOKEN_FALSE,
-                    "boolean" => TOKEN_BOOLEAN_LITERAL,
                     var => match self.ctx.last() {
                         Some(&Context::EnumDef) => {
                             self.enumliterals.borrow_mut().push(var);
-                            TOKEN_ENUM_LITERAL
+                            parse_var(var, TOKEN_ENUM_LITERAL)
                         }
                         Some(&Context::OuterBlock { name: "Groups" }) => {
                             self.groupnames.borrow_mut().push(var);
-                            TOKEN_GROUPNAME
+                            parse_var(var, TOKEN_GROUPNAME)
                         }
                         Some(&Context::GroupDef) => {
                             if self.agentnames.borrow().iter().any(|i| i == var) {
-                                TOKEN_AGENT_NAME
+                                parse_var(var, TOKEN_AGENT_NAME)
                             } else {
-                                TOKEN_ERROR
+                                parse_var(var, TOKEN_ERR_UNDEFINED_NAME)
                             }
                         }
                         Some(&Context::GroupExpr) => {
                             if self.groupnames.borrow().contains(&var) {
-                                TOKEN_GROUPNAME
+                                parse_var(var, TOKEN_GROUPNAME)
                             } else {
-                                TOKEN_ERROR
+                                parse_var(var, TOKEN_ERR_UNDEFINED_NAME)
                             }
                         }
                         Some(&Context::AgentBlock) if self.state.peekchar() == Some('=') => {
                             self.ctx.push(Context::InnerBlockAssign);
-                            TOKEN_INNER_BLOCK_ASSIGN_NAME
+                            parse_inner_block_name(var)
                         }
                         Some(&Context::AgentBlock) if self.state.peekchar() == Some(':') => {
                             self.ctx.push(Context::InnerBlock { name: var });
                             self.ctx.push(Context::InnerBlockBegin);
-                            TOKEN_INNER_BLOCK_NAME
+                            parse_inner_block_name(var)
                         }
                         Some(&Context::OuterBlock { name: _ })
                             if self.state.peekchar() == Some(':') =>
                         {
                             self.ctx.push(Context::InnerBlock { name: var });
                             self.ctx.push(Context::InnerBlockBegin);
-                            TOKEN_INNER_BLOCK_NAME
+                            parse_inner_block_name(var)
                         }
                         _ => {
                             if self.enumliterals.borrow().contains(&var) {
-                                TOKEN_ENUM_LITERAL
+                                parse_var(var, TOKEN_ENUM_LITERAL)
                             } else if self.agentnames.borrow().iter().any(|i| i == var) {
-                                TOKEN_AGENT_NAME
+                                parse_var(var, TOKEN_AGENT_NAME)
                             } else {
-                                TOKEN_VARNAME
+                                parse_var(var, TOKEN_VARNAME)
                             }
                         }
                     },
