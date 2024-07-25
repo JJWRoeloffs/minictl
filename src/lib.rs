@@ -1,4 +1,4 @@
-pub mod parser;
+pub mod ispl;
 
 #[cfg(feature = "python")]
 mod pythonutils;
