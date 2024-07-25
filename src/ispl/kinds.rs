@@ -10,7 +10,7 @@ pub enum SyntaxKind {
     TOKEN_ERR_INVALID_CLOSE_BLOCK, // An end that doesn't end what it should.
     TOKEN_ERR_UNEXPECTED_TOPLEVEL, // Something at toplevel that shouldn't be there.
     TOKEN_ERR_UNEXPECTED_BLOCK, // Something inner block that shouldn't be there.
-    TOKEN_ERR_UNDEFINED_NAME, // Something at toplevel that shouldn't be there.
+    TOKEN_ERR_UNDEFINED_NAME, // A reference to an undefined group / agent name.
     TOKEN_ERROR,             // Anything else that cannot be properly parsed.
 
     TOKEN_VARNAME, // Any nondescript variable
