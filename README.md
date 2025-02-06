@@ -1,6 +1,6 @@
 # MiniCTL
 
-A small symbolic model checker for Computational Tree Logic. It is not implemented to be the fastest or the most featureful, instead, it is written for a Mini-Master Project at _vu Amsterdam_ to be used as a playground for the Bachelor course on Modal Logic. It implements the subset of ISPL (Interpreted Systems Programming Language) that is needed to express CTL, without any extensions from LTL or SML.
+A small model checker for Computational Tree Logic. It is not implemented to be the fastest or the most featureful, instead, it is written for a Mini-Master Project at _vu Amsterdam_ to be used as a playground for the Bachelor course on Modal Logic.
 
 For any Finite-state model $\mathcal{M}$, and a CTL formula $\phi$, MiniCTL can compute $\|\phi\|_{\mathcal{M}}$, which is to say, the set of states in which $\phi$ holds.
 
@@ -14,3 +14,9 @@ On top of Prepositional Logic ($\phi ::= p | \top | \bot | \neg \phi | \phi \lan
 - $\mathrm{E} G\phi$
 - $\mathrm{A} (\phi U \psi)$
 - $\mathrm{E} (\phi U \psi)$
+
+### Development
+
+For testing, install `maturin` through cargo with `cargo install maturin`. Once installed, the editable package can be installed with `pip install -e .[dev]`, where this same command is run to re-compile the code.
+
+To run the tests run `python -m pytest python/tests/`, and to run the formatter run `black python/`

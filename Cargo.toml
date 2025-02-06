@@ -3,11 +3,12 @@ name = "minictl"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 name = "minictl"
 crate-type = ["cdylib"]
 
+[features]
+python = ["dep:pyo3"]
+
 [dependencies]
-pyo3 = "0.21.2"
+pyo3 = { version = "0.23.4", optional = true, features = ["extension-module"] }
