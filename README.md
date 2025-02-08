@@ -17,6 +17,8 @@ On top of Prepositional Logic ($\phi ::= p | \top | \bot | \neg \phi | \phi \lan
 
 ### Development
 
-For testing, install `maturin` through cargo with `cargo install maturin`. Once installed, the editable package can be installed with `pip install -e .[dev]`, where this same command is run to re-compile the code.
+##### Python
+
+For testing, install `maturin` through cargo with `cargo install maturin`. Once installed, the editable package can be installed with `pip install -e .[dev]`, where this same command is run to re-compile the code. To show Rust compiler warnings, `maturin develop` can be run to compile the python part of the code.
 
 To run the tests run `python -m pytest python/tests/`, and to run the formatter run `black python/`
