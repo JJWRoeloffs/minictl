@@ -19,10 +19,22 @@ impl<'a> CTLSolverInner<'a> {
     fn map(&self) -> &HashMap<Arc<CTLFormula>, &'a HashSet<usize>> {
         &self.map
     }
-    fn memoise(&mut self, formula: Arc<CTLFormula>, ret: HashSet<usize>) -> &'a HashSet<usize> {
+    fn memoise_alloc(
+        &mut self,
+        formula: Arc<CTLFormula>,
+        ret: HashSet<usize>,
+    ) -> &'a HashSet<usize> {
         let ret_ref = self.arena.alloc(ret);
         self.map.insert(formula.clone(), ret_ref);
         ret_ref
+    }
+    fn memoise_ref(
+        &mut self,
+        formula: Arc<CTLFormula>,
+        ret: &'a HashSet<usize>,
+    ) -> &'a HashSet<usize> {
+        self.map.insert(formula.clone(), ret);
+        ret
     }
     fn sat_ex(&mut self, formula: Arc<CTLFormula>, model: &Model<CTLVariable>) -> HashSet<usize> {
         model.pre_e_idx(self.solve(formula, model))
@@ -81,12 +93,12 @@ impl<'a> CTLSolverInner<'a> {
         }
         use CTLFormula as F;
         match formula.as_ref() {
-            F::Top => self.memoise(formula.clone(), model.all_idx()),
-            F::Bot => self.memoise(formula.clone(), HashSet::new()),
-            F::Atomic(var) => self.memoise(formula.clone(), model.all_containing_idx(var)),
+            F::Top => self.memoise_alloc(formula.clone(), model.all_idx()),
+            F::Bot => self.memoise_alloc(formula.clone(), HashSet::new()),
+            F::Atomic(var) => self.memoise_alloc(formula.clone(), model.all_containing_idx(var)),
             F::Neg(inner) => {
                 let ret = model.all_except_idx(self.solve(inner.clone(), model));
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
             F::And(inner1, inner2) => {
                 let ret = self
@@ -94,7 +106,7 @@ impl<'a> CTLSolverInner<'a> {
                     .intersection(self.solve(inner2.clone(), model))
                     .copied()
                     .collect();
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
             F::Or(inner1, inner2) => {
                 let ret = self
@@ -102,62 +114,86 @@ impl<'a> CTLSolverInner<'a> {
                     .union(self.solve(inner2.clone(), model))
                     .copied()
                     .collect();
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
-            F::ImpliesR(inner1, inner2) => self.solve(
-                Arc::new(F::Or(Arc::new(F::Neg(inner1.clone())), inner2.clone())),
-                model,
-            ),
-            F::ImpliesL(inner1, inner2) => self.solve(
-                Arc::new(F::Or(inner1.clone(), Arc::new(F::Neg(inner2.clone())))),
-                model,
-            ),
-            F::BiImplies(inner1, inner2) => self.solve(
-                Arc::new(F::And(
-                    Arc::new(F::ImpliesR(inner1.clone(), inner2.clone())),
-                    Arc::new(F::ImpliesR(inner2.clone(), inner1.clone())),
-                )),
-                model,
-            ),
-            F::AX(inner) => self.solve(
-                Arc::new(F::Neg(Arc::new(F::EX(Arc::new(F::Neg(inner.clone())))))),
-                model,
-            ),
+            F::ImpliesR(inner1, inner2) => {
+                let ret = self.solve(
+                    Arc::new(F::Or(Arc::new(F::Neg(inner1.clone())), inner2.clone())),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
+            F::ImpliesL(inner1, inner2) => {
+                let ret = self.solve(
+                    Arc::new(F::Or(inner1.clone(), Arc::new(F::Neg(inner2.clone())))),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
+            F::BiImplies(inner1, inner2) => {
+                let ret = self.solve(
+                    Arc::new(F::And(
+                        Arc::new(F::ImpliesR(inner1.clone(), inner2.clone())),
+                        Arc::new(F::ImpliesR(inner2.clone(), inner1.clone())),
+                    )),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
+            F::AX(inner) => {
+                let ret = self.solve(
+                    Arc::new(F::Neg(Arc::new(F::EX(Arc::new(F::Neg(inner.clone())))))),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
             F::EX(inner) => {
                 let ret = self.sat_ex(inner.clone(), model);
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
             // yuk
-            F::AU(inner1, inner2) => self.solve(
-                Arc::new(F::Or(
-                    Arc::new(F::Neg(Arc::new(F::EU(
-                        Arc::new(F::Neg(inner2.clone())),
-                        Arc::new(F::And(
-                            Arc::new(F::Neg(inner1.clone())),
+            F::AU(inner1, inner2) => {
+                let ret = self.solve(
+                    Arc::new(F::Or(
+                        Arc::new(F::Neg(Arc::new(F::EU(
                             Arc::new(F::Neg(inner2.clone())),
-                        )),
-                    )))),
-                    Arc::new(F::EG(inner2.clone())),
-                )),
-                model,
-            ),
+                            Arc::new(F::And(
+                                Arc::new(F::Neg(inner1.clone())),
+                                Arc::new(F::Neg(inner2.clone())),
+                            )),
+                        )))),
+                        Arc::new(F::EG(inner2.clone())),
+                    )),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
             F::EU(inner1, inner2) => {
                 let ret = self.sat_eu(inner1.clone(), inner2.clone(), model);
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
-            F::EF(inner) => self.solve(Arc::new(F::EU(Arc::new(F::Top), inner.clone())), model),
+            F::EF(inner) => {
+                let ret = self.solve(Arc::new(F::EU(Arc::new(F::Top), inner.clone())), model);
+                self.memoise_ref(formula, ret)
+            }
             F::AF(inner) => {
                 let ret = self.sat_af(inner.clone(), model);
-                self.memoise(formula, ret)
+                self.memoise_alloc(formula, ret)
             }
-            F::EG(inner) => self.solve(
-                Arc::new(F::Neg(Arc::new(F::AF(Arc::new(F::Neg(inner.clone())))))),
-                model,
-            ),
-            F::AG(inner) => self.solve(
-                Arc::new(F::Neg(Arc::new(F::EF(Arc::new(F::Neg(inner.clone())))))),
-                model,
-            ),
+            F::EG(inner) => {
+                let ret = self.solve(
+                    Arc::new(F::Neg(Arc::new(F::AF(Arc::new(F::Neg(inner.clone())))))),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
+            F::AG(inner) => {
+                let ret = self.solve(
+                    Arc::new(F::Neg(Arc::new(F::EF(Arc::new(F::Neg(inner.clone())))))),
+                    model,
+                );
+                self.memoise_ref(formula, ret)
+            }
         }
     }
 }
