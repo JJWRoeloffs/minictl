@@ -1,3 +1,4 @@
+use super::MLVariable;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -10,7 +11,12 @@ impl LTLVariable {
         Self { inner }
     }
 }
+impl MLVariable for LTLFormula {}
 
+// Using Arc<> might be a bit of a weird choise,
+// but I want to play around with multi-threading options,
+// so I might as well just arc all of it already.
+// If rust had second-order types, I'd have used that, but alas.
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub enum LTLFormula {
     Top,

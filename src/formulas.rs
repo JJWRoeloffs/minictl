@@ -6,6 +6,7 @@
 //
 // This allows CTL and LTL to live completely seperate lives, which makes sense,
 // as they are completely distinct logics.
+use std::hash::Hash;
 
 mod ctl_parse;
 mod ctl_types;
@@ -16,6 +17,8 @@ mod ltl_parse;
 mod ltl_types;
 pub use ltl_parse::{parse_ltl, LTLParseError};
 pub use ltl_types::{memoize_ltl, LTLFactory, LTLFormula, LTLVariable};
+
+pub trait MLVariable: Eq + Hash {}
 
 #[cfg(feature = "python")]
 pub mod ctl_python;
