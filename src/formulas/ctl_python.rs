@@ -8,7 +8,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 
 use std::fmt;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::formulas::{ctl_types::memoize_ctl, CTLVariable};
 
@@ -88,30 +88,30 @@ impl PyCTLFormula {
         }
     }
     #[inline(always)]
-    fn arg_to_rust(&self, index: usize) -> Option<Arc<CTLFormula>> {
+    fn arg_to_rust(&self, index: usize) -> Option<Rc<CTLFormula>> {
         self.arguments.get(index)?.to_rust()
     }
 
-    pub(crate) fn to_rust(&self) -> Option<Arc<CTLFormula>> {
+    pub(crate) fn to_rust(&self) -> Option<Rc<CTLFormula>> {
         use CTLFormula as F;
         let ret = match self.name.as_str() {
-            "TOP" => Arc::new(F::Top),
-            "BOT" => Arc::new(F::Bot),
-            "Neg" => Arc::new(F::Neg(self.arg_to_rust(0)?)),
-            "EX" => Arc::new(F::EX(self.arg_to_rust(0)?)),
-            "AX" => Arc::new(F::AX(self.arg_to_rust(0)?)),
-            "EF" => Arc::new(F::EF(self.arg_to_rust(0)?)),
-            "AF" => Arc::new(F::AF(self.arg_to_rust(0)?)),
-            "EG" => Arc::new(F::EG(self.arg_to_rust(0)?)),
-            "AG" => Arc::new(F::AG(self.arg_to_rust(0)?)),
-            "And" => Arc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "Or" => Arc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesR" => Arc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesL" => Arc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "BiImplies" => Arc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "EU" => Arc::new(F::EU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "AU" => Arc::new(F::AU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            other => Arc::new(F::Atomic(CTLVariable::new(other.to_string()))),
+            "TOP" => Rc::new(F::Top),
+            "BOT" => Rc::new(F::Bot),
+            "Neg" => Rc::new(F::Neg(self.arg_to_rust(0)?)),
+            "EX" => Rc::new(F::EX(self.arg_to_rust(0)?)),
+            "AX" => Rc::new(F::AX(self.arg_to_rust(0)?)),
+            "EF" => Rc::new(F::EF(self.arg_to_rust(0)?)),
+            "AF" => Rc::new(F::AF(self.arg_to_rust(0)?)),
+            "EG" => Rc::new(F::EG(self.arg_to_rust(0)?)),
+            "AG" => Rc::new(F::AG(self.arg_to_rust(0)?)),
+            "And" => Rc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "Or" => Rc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "ImpliesR" => Rc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "ImpliesL" => Rc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "BiImplies" => Rc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "EU" => Rc::new(F::EU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "AU" => Rc::new(F::AU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            other => Rc::new(F::Atomic(CTLVariable::new(other.to_string()))),
         };
         Some(memoize_ctl(&ret))
     }

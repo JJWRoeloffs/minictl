@@ -8,7 +8,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 
 use std::fmt;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::formulas::{ltl_types::memoize_ltl, LTLVariable};
 
@@ -86,28 +86,28 @@ impl PyLTLFormula {
         }
     }
     #[inline(always)]
-    fn arg_to_rust(&self, index: usize) -> Option<Arc<LTLFormula>> {
+    fn arg_to_rust(&self, index: usize) -> Option<Rc<LTLFormula>> {
         self.arguments.get(index)?.to_rust()
     }
 
-    pub(crate) fn to_rust(&self) -> Option<Arc<LTLFormula>> {
+    pub(crate) fn to_rust(&self) -> Option<Rc<LTLFormula>> {
         use LTLFormula as F;
         let ret = match self.name.as_str() {
-            "TOP" => Arc::new(F::Top),
-            "BOT" => Arc::new(F::Bot),
-            "Neg" => Arc::new(F::Neg(self.arg_to_rust(0)?)),
-            "X" => Arc::new(F::X(self.arg_to_rust(0)?)),
-            "F" => Arc::new(F::F(self.arg_to_rust(0)?)),
-            "G" => Arc::new(F::G(self.arg_to_rust(0)?)),
-            "And" => Arc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "Or" => Arc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesR" => Arc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesL" => Arc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "BiImplies" => Arc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "U" => Arc::new(F::U(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "W" => Arc::new(F::W(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "R" => Arc::new(F::R(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            other => Arc::new(F::Atomic(LTLVariable::new(other.to_string()))),
+            "TOP" => Rc::new(F::Top),
+            "BOT" => Rc::new(F::Bot),
+            "Neg" => Rc::new(F::Neg(self.arg_to_rust(0)?)),
+            "X" => Rc::new(F::X(self.arg_to_rust(0)?)),
+            "F" => Rc::new(F::F(self.arg_to_rust(0)?)),
+            "G" => Rc::new(F::G(self.arg_to_rust(0)?)),
+            "And" => Rc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "Or" => Rc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "ImpliesR" => Rc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "ImpliesL" => Rc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "BiImplies" => Rc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "U" => Rc::new(F::U(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "W" => Rc::new(F::W(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            "R" => Rc::new(F::R(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
+            other => Rc::new(F::Atomic(LTLVariable::new(other.to_string()))),
         };
         Some(memoize_ltl(&ret))
     }

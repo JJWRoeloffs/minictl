@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 use std::str::Chars;
-use std::sync::Arc;
+use std::rc::Rc;
 use thiserror::Error;
 
 use super::ltl_types::{LTLFormula, LTLVariable};
@@ -177,10 +177,10 @@ impl<'a> LTLParser<'a> {
             }
         }
     }
-    fn parse(&mut self) -> Result<Arc<LTLFormula>, LTLParseError> {
+    fn parse(&mut self) -> Result<Rc<LTLFormula>, LTLParseError> {
         self.parse_expression(1)
     }
-    fn parse_expression(&mut self, min_precedence: u8) -> Result<Arc<LTLFormula>, LTLParseError> {
+    fn parse_expression(&mut self, min_precedence: u8) -> Result<Rc<LTLFormula>, LTLParseError> {
         use LTLFormula as F;
         use LTLToken as T;
         let mut left = self.parse_primary()?;
@@ -201,7 +201,7 @@ impl<'a> LTLParser<'a> {
             let token = self.tokens.next().unwrap()?;
             let right = self.parse_expression(token_precedence + 1)?;
 
-            left = Arc::new(match token {
+            left = Rc::new(match token {
                 T::ImpliesR => F::ImpliesR(left, right),
                 T::ImpliesL => F::ImpliesL(left, right),
                 T::BiImplies => F::BiImplies(left, right),
@@ -216,17 +216,17 @@ impl<'a> LTLParser<'a> {
 
         Ok(left)
     }
-    fn parse_primary(&mut self) -> Result<Arc<LTLFormula>, LTLParseError> {
+    fn parse_primary(&mut self) -> Result<Rc<LTLFormula>, LTLParseError> {
         use LTLFormula as F;
         use LTLToken as T;
         match self.tokens.next() {
-            Some(Ok(T::Top)) => Ok(Arc::new(F::Top)),
-            Some(Ok(T::Bot)) => Ok(Arc::new(F::Bot)),
-            Some(Ok(T::Variable(var))) => Ok(Arc::new(F::Atomic(LTLVariable::new(var)))),
-            Some(Ok(T::Not)) => Ok(Arc::new(F::Neg(self.parse_primary()?))),
-            Some(Ok(T::X)) => Ok(Arc::new(F::X(self.parse_primary()?))),
-            Some(Ok(T::F)) => Ok(Arc::new(F::F(self.parse_primary()?))),
-            Some(Ok(T::G)) => Ok(Arc::new(F::G(self.parse_primary()?))),
+            Some(Ok(T::Top)) => Ok(Rc::new(F::Top)),
+            Some(Ok(T::Bot)) => Ok(Rc::new(F::Bot)),
+            Some(Ok(T::Variable(var))) => Ok(Rc::new(F::Atomic(LTLVariable::new(var)))),
+            Some(Ok(T::Not)) => Ok(Rc::new(F::Neg(self.parse_primary()?))),
+            Some(Ok(T::X)) => Ok(Rc::new(F::X(self.parse_primary()?))),
+            Some(Ok(T::F)) => Ok(Rc::new(F::F(self.parse_primary()?))),
+            Some(Ok(T::G)) => Ok(Rc::new(F::G(self.parse_primary()?))),
             Some(Ok(T::LParen)) => {
                 let expr = self.parse_expression(1)?;
                 self.expect_token(T::RParen, "Expected closing parentheses")?;
@@ -242,7 +242,7 @@ impl<'a> LTLParser<'a> {
 }
 
 #[inline(always)]
-pub fn parse_ltl(input: &str) -> Result<Arc<LTLFormula>, LTLParseError> {
+pub fn parse_ltl(input: &str) -> Result<Rc<LTLFormula>, LTLParseError> {
     let lexer = LTLLexer::new(input);
     let mut parser = LTLParser::new(lexer);
     parser.parse()
