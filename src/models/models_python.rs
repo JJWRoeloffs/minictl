@@ -12,7 +12,13 @@ impl From<ModelCreationError> for PyErr {
     }
 }
 
-#[pyclass(module = "minictl", get_all, name = "State")]
+/// The Python view into the State
+/// This class is frozen. Objects, once created, cannot be modified.
+///
+/// In python, this class will usually be created for you when relevant,
+/// but you can create on manually with the State("name", {"var1", "var2"}) constructor,
+/// providing the state name and a set of variables that are true in the state.
+#[pyclass(module = "minictl", name = "State", get_all, frozen)]
 #[derive(Debug, Clone)]
 pub struct PyState {
     pub name: String,
@@ -35,8 +41,16 @@ impl PyState {
         self.variables.contains(var)
     }
 }
-
-#[pyclass(module = "minictl", name = "Model")]
+/// The python view into the CTLFormula.
+/// This class is frozen. Objects, once created, cannot be modified.
+/// This class does not expose any public fields. It can only be inspected through methods.
+///
+/// In python, this class will usually be created for you when relevant,
+/// but you can create on manually with the Model([s1, s2], {"s1": ["s1"], "s2": ["s2"]}) constructor,
+/// providing a list of states and a hashmap that represents the kripke frame.
+/// This constructor throws a value error when the arguments do not lead to a valid frame,
+/// e.g. when not all states have outgoing edges, or if edges point to unknown states.
+#[pyclass(module = "minictl", name = "Model", frozen)]
 #[derive(Debug, Clone)]
 pub struct PyModel {
     states: Vec<PyState>,

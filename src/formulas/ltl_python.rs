@@ -14,6 +14,14 @@ use crate::formulas::{ltl_types::memoize_ltl, LTLVariable};
 
 use super::{parse_ltl, LTLFormula};
 
+/// The python view into the LTLFormula.
+/// This class is frozen. Objects, once created, cannot be modified.
+///
+/// In python, either create this litterally through the constructor,
+/// like `LTLFormula("and", LTLFormula("p"), LTLFormula("q"))` or though the
+/// .parse method like: LTLFormula.parse("p and q")
+///
+/// Implements `__str__`, `__eq__`, and `__hash__`.
 #[pyclass(
     module = "minictl",
     name = "LTLFormula",

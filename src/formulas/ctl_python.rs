@@ -14,6 +14,14 @@ use crate::formulas::{ctl_types::memoize_ctl, CTLVariable};
 
 use super::{parse_ctl, CTLFormula};
 
+/// The python view into the CTLFormula.
+/// This class is frozen. Objects, once created, cannot be modified.
+///
+/// In python, either create this litterally through the constructor,
+/// like `CTLFormula("and", CTLFormula("p"), CTLFormula("q"))` or though the
+/// .parse method like: CTLFormula.parse("p and q")
+///
+/// Implements `__str__`, `__eq__`, and `__hash__`.
 #[pyclass(
     module = "minictl",
     name = "CTLFormula",
