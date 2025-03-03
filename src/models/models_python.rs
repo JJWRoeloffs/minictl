@@ -41,7 +41,7 @@ impl PyState {
         self.variables.contains(var)
     }
 }
-/// The python view into the CTLFormula.
+/// The python view into the Model
 /// This class is frozen. Objects, once created, cannot be modified.
 /// This class does not expose any public fields. It can only be inspected through methods.
 ///
