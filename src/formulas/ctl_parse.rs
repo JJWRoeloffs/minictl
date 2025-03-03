@@ -1,6 +1,6 @@
 use std::iter::Peekable;
-use std::sync::Arc;
 use std::str::Chars;
+use std::sync::Arc;
 use thiserror::Error;
 
 use super::ctl_types::{CTLFormula, CTLVariable};

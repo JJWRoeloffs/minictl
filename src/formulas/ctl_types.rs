@@ -13,6 +13,11 @@ impl CTLVariable {
 }
 impl MLVariable for CTLVariable {}
 
+// We are using Arc here because pyo3 demands it.
+// pyo3 exported classes need to be sendable between threads, even when
+// not planning to do multithreading. While I can try to implement Send for
+// `HashMap<Rc<CTLFormula>, HashSet<usize>>` in some safe manner, I think
+// the overhead of Arc over Rc is low enough I'll just do it this way.
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub enum CTLFormula {
     Top,
@@ -53,7 +58,9 @@ impl CTLFormula {
             F::Or(lhs, rhs) => Arc::new(F::Or(lhs.memoize(cache), rhs.memoize(cache))),
             F::ImpliesR(lhs, rhs) => Arc::new(F::ImpliesR(lhs.memoize(cache), rhs.memoize(cache))),
             F::ImpliesL(lhs, rhs) => Arc::new(F::ImpliesL(lhs.memoize(cache), rhs.memoize(cache))),
-            F::BiImplies(lhs, rhs) => Arc::new(F::BiImplies(lhs.memoize(cache), rhs.memoize(cache))),
+            F::BiImplies(lhs, rhs) => {
+                Arc::new(F::BiImplies(lhs.memoize(cache), rhs.memoize(cache)))
+            }
             F::EX(inner) => Arc::new(F::EX(inner.memoize(cache))),
             F::AX(inner) => Arc::new(F::AX(inner.memoize(cache))),
             F::EF(inner) => Arc::new(F::EF(inner.memoize(cache))),
