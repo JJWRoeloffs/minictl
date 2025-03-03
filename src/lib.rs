@@ -1,6 +1,6 @@
 pub mod formulas;
+pub mod modelcheckers;
 pub mod models;
-pub mod satisfies;
 
 #[cfg(feature = "python")]
 use pyo3::prelude::*;

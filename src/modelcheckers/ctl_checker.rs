@@ -1,22 +1,18 @@
-#![allow(unused)]
-
 use std::borrow::Cow;
-use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
-use std::ops::Deref;
 use std::rc::Rc;
 
 use typed_arena::Arena;
 
 use crate::formulas::ctl_formula_macros as f;
-use crate::formulas::{CTLFactory, CTLFormula, CTLVariable};
+use crate::formulas::{CTLFactory, CTLFormula};
 use crate::models::Model;
 
-struct CTLSolverInner<'a> {
+struct CTLCheckerInner<'a> {
     map: HashMap<Rc<CTLFormula>, &'a HashSet<usize>>,
     arena: &'a Arena<HashSet<usize>>,
 }
-impl<'a> CTLSolverInner<'a> {
+impl<'a> CTLCheckerInner<'a> {
     fn map(&self) -> &HashMap<Rc<CTLFormula>, &'a HashSet<usize>> {
         &self.map
     }
@@ -38,7 +34,7 @@ impl<'a> CTLSolverInner<'a> {
         ret
     }
     fn sat_ex(&mut self, formula: Rc<CTLFormula>, model: &Model) -> HashSet<usize> {
-        model.pre_e_idx(self.solve(formula, model))
+        model.pre_e_idx(self.check(formula, model))
     }
     fn sat_eu(
         &mut self,
@@ -48,8 +44,8 @@ impl<'a> CTLSolverInner<'a> {
     ) -> HashSet<usize> {
         // We are using Cow only to have some type generic over T and &T,
         // as our initial `solve()` returns a reference, but calls to pre_a return owned values.
-        let mut set = Cow::Borrowed(self.solve(formula2, model));
-        let base = self.solve(formula1, model);
+        let mut set = Cow::Borrowed(self.check(formula2, model));
+        let base = self.check(formula1, model);
         loop {
             let next = model
                 .pre_e_idx(&set)
@@ -71,7 +67,7 @@ impl<'a> CTLSolverInner<'a> {
     fn sat_af(&mut self, formula: Rc<CTLFormula>, model: &Model) -> HashSet<usize> {
         // We are using Cow only to have some type generic over T and &T,
         // as our initial `solve()` returns a reference, but calls to pre_a return owned values.
-        let mut set = Cow::Borrowed(self.solve(formula, model));
+        let mut set = Cow::Borrowed(self.check(formula, model));
         loop {
             let next: HashSet<usize> = model.pre_a_idx(&set).union(&set).copied().collect();
             if next == *set {
@@ -83,7 +79,7 @@ impl<'a> CTLSolverInner<'a> {
             set = Cow::Owned(next);
         }
     }
-    fn solve(&mut self, formula: Rc<CTLFormula>, model: &Model) -> &'a HashSet<usize> {
+    fn check(&mut self, formula: Rc<CTLFormula>, model: &Model) -> &'a HashSet<usize> {
         if let Some(ret) = self.map.get(&formula) {
             return ret;
         }
@@ -95,35 +91,35 @@ impl<'a> CTLSolverInner<'a> {
                 self.memoise_alloc(formula.clone(), model.all_containing_idx(&var.inner))
             }
             F::Neg(inner) => {
-                let ret = model.all_except_idx(self.solve(inner.clone(), model));
+                let ret = model.all_except_idx(self.check(inner.clone(), model));
                 self.memoise_alloc(formula, ret)
             }
             F::And(lhs, rhs) => {
                 let ret = self
-                    .solve(lhs.clone(), model)
-                    .intersection(self.solve(rhs.clone(), model))
+                    .check(lhs.clone(), model)
+                    .intersection(self.check(rhs.clone(), model))
                     .copied()
                     .collect();
                 self.memoise_alloc(formula, ret)
             }
             F::Or(lhs, rhs) => {
                 let ret = self
-                    .solve(lhs.clone(), model)
-                    .union(self.solve(rhs.clone(), model))
+                    .check(lhs.clone(), model)
+                    .union(self.check(rhs.clone(), model))
                     .copied()
                     .collect();
                 self.memoise_alloc(formula, ret)
             }
             F::ImpliesR(lhs, rhs) => {
-                let ret = self.solve(f::or!(f::neg!(lhs.clone()), rhs.clone()), model);
+                let ret = self.check(f::or!(f::neg!(lhs.clone()), rhs.clone()), model);
                 self.memoise_ref(formula, ret)
             }
             F::ImpliesL(lhs, rhs) => {
-                let ret = self.solve(f::or!(lhs.clone(), f::neg!(rhs.clone())), model);
+                let ret = self.check(f::or!(lhs.clone(), f::neg!(rhs.clone())), model);
                 self.memoise_ref(formula, ret)
             }
             F::BiImplies(lhs, rhs) => {
-                let ret = self.solve(
+                let ret = self.check(
                     f::and!(
                         f::impies_r!(lhs.clone(), rhs.clone()),
                         f::impies_r!(rhs.clone(), lhs.clone())
@@ -133,7 +129,7 @@ impl<'a> CTLSolverInner<'a> {
                 self.memoise_ref(formula, ret)
             }
             F::AX(inner) => {
-                let ret = self.solve(f::neg!(f::ex!(f::neg!(inner.clone()))), model);
+                let ret = self.check(f::neg!(f::ex!(f::neg!(inner.clone()))), model);
                 self.memoise_ref(formula, ret)
             }
             F::EX(inner) => {
@@ -142,7 +138,7 @@ impl<'a> CTLSolverInner<'a> {
             }
             // yuk
             F::AU(lhs, rhs) => {
-                let ret = self.solve(
+                let ret = self.check(
                     f::or!(
                         f::neg!(f::eu!(
                             f::neg!(rhs.clone()),
@@ -159,7 +155,7 @@ impl<'a> CTLSolverInner<'a> {
                 self.memoise_alloc(formula, ret)
             }
             F::EF(inner) => {
-                let ret = self.solve(f::eu!(f::top!(), inner.clone()), model);
+                let ret = self.check(f::eu!(f::top!(), inner.clone()), model);
                 self.memoise_ref(formula, ret)
             }
             F::AF(inner) => {
@@ -167,11 +163,11 @@ impl<'a> CTLSolverInner<'a> {
                 self.memoise_alloc(formula, ret)
             }
             F::EG(inner) => {
-                let ret = self.solve(f::neg!(f::af!(f::neg!(inner.clone()))), model);
+                let ret = self.check(f::neg!(f::af!(f::neg!(inner.clone()))), model);
                 self.memoise_ref(formula, ret)
             }
             F::AG(inner) => {
-                let ret = self.solve(f::neg!(f::ef!(f::neg!(inner.clone()))), model);
+                let ret = self.check(f::neg!(f::ef!(f::neg!(inner.clone()))), model);
                 self.memoise_ref(formula, ret)
             }
         }
@@ -179,12 +175,12 @@ impl<'a> CTLSolverInner<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct CTLSolver {
+pub struct CTLChecker {
     model: Model,
     formulas: CTLFactory,
     cache: HashMap<Rc<CTLFormula>, HashSet<usize>>,
 }
-impl CTLSolver {
+impl CTLChecker {
     pub fn new(model: Model) -> Self {
         Self {
             model,
@@ -192,7 +188,7 @@ impl CTLSolver {
             cache: HashMap::new(),
         }
     }
-    pub fn satisfies(&mut self, formula: Rc<CTLFormula>) -> HashSet<String> {
+    pub fn check(&mut self, formula: Rc<CTLFormula>) -> HashSet<String> {
         let formula = self.formulas.create(formula);
 
         // We need to clone the current cache because we want to modify it
@@ -209,14 +205,14 @@ impl CTLSolver {
         // and get the reference map out of it again,
         // which needs to be cloned because it won't live as long as self
         // We can perform this clone while transforming it from indexes to names.
-        let mut solver = CTLSolverInner { map, arena: &arena };
-        let ret = self.model.get_names(solver.solve(formula, &self.model));
+        let mut solver = CTLCheckerInner { map, arena: &arena };
+        let ret = self.model.get_names(solver.check(formula, &self.model));
 
         let cache_update: HashMap<Rc<CTLFormula>, HashSet<usize>> = solver
             .map()
             .iter()
             // We only need to take the value out of it wasn't in cache already
-            .filter(|(k, v)| !self.cache.contains_key(k.as_ref()))
+            .filter(|(k, _v)| !self.cache.contains_key(k.as_ref()))
             // We could try to move from arena, but cloning shouldn't cost too much
             .map(|(k, &v)| (k.clone(), v.clone()))
             .collect();
