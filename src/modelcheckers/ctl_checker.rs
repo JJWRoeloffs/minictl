@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
+use std::sync::Arc;
 
 use typed_arena::Arena;
 
@@ -9,16 +9,16 @@ use crate::formulas::{CTLFactory, CTLFormula};
 use crate::models::Model;
 
 struct CTLCheckerInner<'a> {
-    map: HashMap<Rc<CTLFormula>, &'a HashSet<usize>>,
+    map: HashMap<Arc<CTLFormula>, &'a HashSet<usize>>,
     arena: &'a Arena<HashSet<usize>>,
 }
 impl<'a> CTLCheckerInner<'a> {
-    fn map(&self) -> &HashMap<Rc<CTLFormula>, &'a HashSet<usize>> {
+    fn map(&self) -> &HashMap<Arc<CTLFormula>, &'a HashSet<usize>> {
         &self.map
     }
     fn memoise_alloc(
         &mut self,
-        formula: Rc<CTLFormula>,
+        formula: Arc<CTLFormula>,
         ret: HashSet<usize>,
     ) -> &'a HashSet<usize> {
         let ret_ref = self.arena.alloc(ret);
@@ -27,19 +27,19 @@ impl<'a> CTLCheckerInner<'a> {
     }
     fn memoise_ref(
         &mut self,
-        formula: Rc<CTLFormula>,
+        formula: Arc<CTLFormula>,
         ret: &'a HashSet<usize>,
     ) -> &'a HashSet<usize> {
         self.map.insert(formula.clone(), ret);
         ret
     }
-    fn sat_ex(&mut self, formula: Rc<CTLFormula>, model: &Model) -> HashSet<usize> {
+    fn sat_ex(&mut self, formula: Arc<CTLFormula>, model: &Model) -> HashSet<usize> {
         model.pre_e_idx(self.check(formula, model))
     }
     fn sat_eu(
         &mut self,
-        formula1: Rc<CTLFormula>,
-        formula2: Rc<CTLFormula>,
+        formula1: Arc<CTLFormula>,
+        formula2: Arc<CTLFormula>,
         model: &Model,
     ) -> HashSet<usize> {
         // We are using Cow only to have some type generic over T and &T,
@@ -64,7 +64,7 @@ impl<'a> CTLCheckerInner<'a> {
             set = Cow::Owned(next);
         }
     }
-    fn sat_af(&mut self, formula: Rc<CTLFormula>, model: &Model) -> HashSet<usize> {
+    fn sat_af(&mut self, formula: Arc<CTLFormula>, model: &Model) -> HashSet<usize> {
         // We are using Cow only to have some type generic over T and &T,
         // as our initial `solve()` returns a reference, but calls to pre_a return owned values.
         let mut set = Cow::Borrowed(self.check(formula, model));
@@ -79,7 +79,7 @@ impl<'a> CTLCheckerInner<'a> {
             set = Cow::Owned(next);
         }
     }
-    fn check(&mut self, formula: Rc<CTLFormula>, model: &Model) -> &'a HashSet<usize> {
+    fn check(&mut self, formula: Arc<CTLFormula>, model: &Model) -> &'a HashSet<usize> {
         if let Some(ret) = self.map.get(&formula) {
             return ret;
         }
@@ -178,7 +178,7 @@ impl<'a> CTLCheckerInner<'a> {
 pub struct CTLChecker {
     model: Model,
     formulas: CTLFactory,
-    cache: HashMap<Rc<CTLFormula>, HashSet<usize>>,
+    cache: HashMap<Arc<CTLFormula>, HashSet<usize>>,
 }
 impl CTLChecker {
     pub fn new(model: Model) -> Self {
@@ -188,12 +188,12 @@ impl CTLChecker {
             cache: HashMap::new(),
         }
     }
-    pub fn check(&mut self, formula: Rc<CTLFormula>) -> HashSet<String> {
+    pub fn check(&mut self, formula: Arc<CTLFormula>) -> HashSet<String> {
         let formula = self.formulas.create(formula);
 
         // We need to clone the current cache because we want to modify it
         // Otherwise we would have two mutable references out to self.
-        let map: HashMap<Rc<CTLFormula>, &HashSet<usize>> =
+        let map: HashMap<Arc<CTLFormula>, &HashSet<usize>> =
             self.cache.iter().map(|(k, v)| (k.clone(), v)).collect();
 
         // We need to create an arena because we want to memoise
@@ -208,7 +208,7 @@ impl CTLChecker {
         let mut solver = CTLCheckerInner { map, arena: &arena };
         let ret = self.model.get_names(solver.check(formula, &self.model));
 
-        let cache_update: HashMap<Rc<CTLFormula>, HashSet<usize>> = solver
+        let cache_update: HashMap<Arc<CTLFormula>, HashSet<usize>> = solver
             .map()
             .iter()
             // We only need to take the value out of it wasn't in cache already
