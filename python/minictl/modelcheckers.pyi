@@ -1,0 +1,6 @@
+from minictl.models import Model
+from minictl.formulas import CTLFormula
+
+class CTLChecker:
+    def __init__(self, model: Model) -> None: ...
+    def check(self, formula: CTLFormula) -> set[str]: ...

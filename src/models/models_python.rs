@@ -77,6 +77,9 @@ impl PyModel {
             "{which} cannot be found in the model"
         )))
     }
+    pub fn into_rust(self) -> Model {
+        self.model
+    }
 }
 
 #[pymethods]

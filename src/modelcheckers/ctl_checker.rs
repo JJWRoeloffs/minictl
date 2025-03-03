@@ -188,6 +188,9 @@ impl CTLChecker {
             cache: HashMap::new(),
         }
     }
+    pub fn get_model(&self) -> &Model {
+        &self.model
+    }
     pub fn check(&mut self, formula: Arc<CTLFormula>) -> HashSet<String> {
         let formula = self.formulas.create(formula);
 

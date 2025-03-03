@@ -34,5 +34,6 @@ fn minictl(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(hello_world, m)?)?;
     add_submodule(m, &formulas::python::get_submodule(m.py())?)?;
     add_submodule(m, &models::python::get_submodule(m.py())?)?;
+    add_submodule(m, &modelcheckers::python::get_submodule(m.py())?)?;
     Ok(())
 }
