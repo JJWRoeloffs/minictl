@@ -1,3 +1,4 @@
+import pytest
 from minictl.models import Model, State
 
 
@@ -35,3 +36,24 @@ class TestModelBasics:
         assert model.all_except(set()) == {"s1", "s2", "s3"}
         assert model.all_except({"s2"}) == {"s1", "s3"}
         assert model.all_except({"s1", "s2", "s3"}) == set()
+
+
+class TestModelCreationErrors:
+    s1 = State("s1", {"p", "q"})
+    s2 = State("s2", set())
+
+    def test_state_not_mentionned(self):
+        with pytest.raises(ValueError):
+            Model([self.s1, self.s2], {"s1": ["s1"]})
+
+    def test_empty_edge_list(self):
+        with pytest.raises(ValueError):
+            Model([self.s1, self.s2], {"s1": ["s1"], "s2": []})
+
+    def test_unused_edge(self):
+        with pytest.raises(ValueError):
+            Model([self.s1], {"s1": ["s1"], "s2": ["s1"]})
+
+    def test_dangeling_edge(self):
+        with pytest.raises(ValueError):
+            Model([self.s1], {"s1": ["s1", "s2"]})
