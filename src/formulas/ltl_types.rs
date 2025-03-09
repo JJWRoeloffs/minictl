@@ -1,3 +1,6 @@
+// Allowing unused while LTLChecker isn't implemented.
+#![allow(unused)]
+
 use super::MLVariable;
 use std::collections::HashMap;
 use std::sync::Arc;

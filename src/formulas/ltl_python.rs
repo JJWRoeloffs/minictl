@@ -1,3 +1,6 @@
+// Allowing unused while LTLChecker isn't implemented.
+#![allow(unused)]
+
 // This file is basically a big switchboard matching over the formula types multiple times.
 // ... in all cases recursively defining some simple formula.
 // It might be possible to define these generically and make the file a lot shorter,
