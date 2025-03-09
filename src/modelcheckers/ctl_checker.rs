@@ -225,4 +225,16 @@ impl CTLChecker {
         self.cache.extend(cache_update);
         ret
     }
+
+    // This function is only there so I can play with the checker from python,
+    // and insert different algorithms.
+    pub(super) fn update_cache(
+        &mut self,
+        formula: Arc<CTLFormula>,
+        res: HashSet<String>,
+    ) -> Option<()> {
+        let indexes = self.model.get_idxs(&res)?;
+        self.cache.insert(formula, indexes);
+        Some(())
+    }
 }

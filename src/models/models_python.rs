@@ -77,8 +77,8 @@ impl PyModel {
             "{which} cannot be found in the model"
         )))
     }
-    pub fn into_rust(self) -> Model {
-        self.model
+    pub fn to_rust(&self) -> Model {
+        self.model.clone()
     }
 }
 
@@ -127,5 +127,13 @@ impl PyModel {
             .collect::<PyResult<HashSet<usize>>>()?;
         let res_indexes = self.model.pre_a_idx(&indexes);
         Ok(self.model.get_names(&res_indexes))
+    }
+    fn get_next(&self, name: &str) -> PyResult<HashSet<String>> {
+        self.model
+            .get_next(name)
+            .ok_or(PyKeyError::new_err(
+                "Could not find specified state in model states",
+            ))
+            .map(|s| s.into_iter().collect())
     }
 }

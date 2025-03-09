@@ -113,6 +113,9 @@ impl CTLFactory {
     pub fn actual_size(&self) -> usize {
         self.cache.len()
     }
+    pub(crate) fn get_cache(&self) -> &HashMap<CTLFormula, Arc<CTLFormula>> {
+        &self.cache
+    }
 }
 
 #[inline(always)]

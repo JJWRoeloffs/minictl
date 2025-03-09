@@ -103,8 +103,14 @@ impl Model {
     pub(crate) fn get_idx(&self, name: &str) -> Option<usize> {
         self.name_idx.get(name).copied()
     }
+    pub(crate) fn get_idxs(&self, names: &HashSet<String>) -> Option<HashSet<usize>> {
+        names.iter().map(|n| self.get_idx(n)).collect()
+    }
     pub fn get_state(&self, name: &str) -> Option<&State> {
         self.states.get(self.get_idx(name)?)
+    }
+    pub fn get_next(&self, name: &str) -> Option<Vec<String>> {
+        self.edges.get(name).cloned()
     }
     pub(crate) fn all_idx(&self) -> HashSet<usize> {
         self.states.iter().enumerate().map(|(i, _)| i).collect()
