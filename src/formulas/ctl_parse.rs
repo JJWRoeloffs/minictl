@@ -121,7 +121,7 @@ impl<'a> CTLLexer<'a> {
     fn consume_lowercase_variable_or_keyword(&mut self) -> Option<Result<CTLToken, CTLParseError>> {
         let mut name = String::new();
         while let Some(&ch) = self.chars.peek() {
-            if ch.is_lowercase() {
+            if ch.is_lowercase() || ch.is_numeric() {
                 name.push(ch);
                 self.chars.next();
             } else {
