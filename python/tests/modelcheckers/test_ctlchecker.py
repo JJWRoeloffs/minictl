@@ -171,7 +171,7 @@ class TestCheckerBasics:
 
 # These come from lecture and workgroup slides of the course.
 # I thought making it do all assignments would be a good and funny test. :P
-class TestCheckerFormulas:
+class TestCheckerFormulasLectures:
     s1 = State("s1", {"p"})
     s2 = State("s2", {"p", "q"})
     s3 = State("s3", {"p", "q"})
@@ -222,4 +222,70 @@ class TestCheckerFormulas:
             "s4",
             "s5",
             "s6",
+        }
+
+
+class TestCheckerFormulasMutualExclusion:
+    s0 = State("s0", {"n1", "n2"})
+    s1 = State("s1", {"t1", "n2"})
+    s2 = State("s2", {"c1", "n2"})
+    s3 = State("s3", {"t1", "t2"})
+    s4 = State("s4", {"c1", "t2"})
+    s5 = State("s5", {"n1", "t2"})
+    s6 = State("s6", {"n1", "c2"})
+    s7 = State("s7", {"t1", "c2"})
+    s8 = State("s8", {"t1", "t2"})
+
+    model = Model(
+        [s0, s1, s2, s3, s4, s5, s6, s7, s8],
+        {
+            "s0": ["s1", "s5"],
+            "s1": ["s3", "s2"],
+            "s2": ["s4", "s5"],
+            "s3": ["s4"],
+            "s4": ["s5"],
+            "s5": ["s6", "s8"],
+            "s6": ["s1", "s7"],
+            "s7": ["s1"],
+            "s8": ["s7"],
+        },
+    )
+
+    def test_safety(self):
+        checker = CTLChecker(self.model)
+        assert checker.check(CTLFormula.parse("AG!(c1 and c2)")) == {
+            "s0",
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+        }
+
+    def test_liveness(self):
+        checker = CTLChecker(self.model)
+        assert checker.check(CTLFormula.parse("AG(t1 -> AFc1)")) == {
+            "s0",
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+        }
+        assert checker.check(CTLFormula.parse("AG(t2 -> AFc2)")) == {
+            "s0",
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
         }
