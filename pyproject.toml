@@ -16,10 +16,5 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest", "black"]
 
-[tool.setuptools.package-data]
-your_module = ["py.typed"]
-
 [tool.maturin]
-python-source = "python"
-features = ["python"]
-profile = "release"
+features = ["pyo3/extension-module", "python"]
