@@ -24,6 +24,7 @@ pub struct PyCTLChecker {
     pymodel: PyModel,
     inner: CTLChecker,
     modifications: HashMap<String, Py<PyAny>>,
+    called: bool,
 }
 
 impl PyCTLChecker {
@@ -114,6 +115,7 @@ impl PyCTLChecker {
             inner: CTLChecker::new(model.to_rust()),
             pymodel: model,
             modifications: HashMap::new(),
+            called: false,
         }
     }
     #[pyo3(signature = (formula, *, debug = false))]
@@ -123,6 +125,7 @@ impl PyCTLChecker {
         formula: PyCTLFormula,
         debug: bool,
     ) -> PyResult<HashSet<String>> {
+        self.called = true;
         let mut ctlfactory = CTLFactory::default();
         let rsformula = ctlfactory.create(formula.to_rust().ok_or(PyValueError::new_err(
             "provided formula is not a valid CTL formula",
@@ -152,6 +155,12 @@ impl PyCTLChecker {
         Ok(self.inner.check(rsformula))
     }
     fn set_custom(&mut self, target: String, func: Py<PyAny>) -> PyResult<()> {
+        if self.called {
+            return Err(PyValueError::new_err(
+                "Cannot set modification after checker has been called.
+                Instead, create a new CTLChecker with the `.get_model()` from this one.",
+            ));
+        }
         match target.as_str() {
             "EX" | "AX" | "EF" | "AF" | "EG" | "AG" | "EU" | "AU" => {
                 self.modifications.insert(target, func);
@@ -164,6 +173,9 @@ impl PyCTLChecker {
     }
     fn is_modified(&self) -> bool {
         !self.modifications.is_empty()
+    }
+    fn get_model(&self) -> PyModel {
+        self.pymodel.clone()
     }
 }
 

@@ -159,3 +159,15 @@ class TestModularChecker:
         assert checker.is_modified()
         checker.set_custom("EF", empty)
         assert checker.is_modified()
+
+    def test_get_model(self):
+        checker = CTLChecker(self.model)
+        model = checker.get_model()
+        assert model.all() == {"s1", "s2", "s3", "s4", "s5", "s6"}
+
+    def test_cannot_set_after_check(self):
+        checker = CTLChecker(self.model)
+        checker.set_custom("EF", ef)
+        checker.check(CTLFormula.parse("EFp"), debug=True)
+        with pytest.raises(ValueError):
+            checker.set_custom("EU", eu)
