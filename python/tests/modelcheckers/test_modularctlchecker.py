@@ -19,6 +19,10 @@ def ef_correct(states: set[str], model: Model) -> set[str]:
             states = next_states
 
 
+def ef_empty(states: set[str], model: Model) -> set[str]:
+    return set()
+
+
 # def eu(lhs: set[str], rhs: set[str], model: Model) -> set[str]:
 #     states = rhs
 #     while True:
@@ -46,8 +50,8 @@ class TestModularChecker:
 
     def test_ef_correct(self):
         checker = CTLChecker(self.model)
-        checker.add_custom("EF", ef_correct)
-        assert checker.check_with_custom(CTLFormula.parse("EFp"), debug=True) == {
+        checker.set_custom("EF", ef_correct)
+        assert checker.check(CTLFormula.parse("EFp"), debug=True) == {
             "s1",
             "s2",
             "s3",
@@ -55,7 +59,7 @@ class TestModularChecker:
             "s5",
             "s6",
         }
-        assert checker.check_with_custom(CTLFormula.parse("EFq")) == {
+        assert checker.check(CTLFormula.parse("EFq")) == {
             "s1",
             "s2",
             "s3",
@@ -63,3 +67,11 @@ class TestModularChecker:
             "s5",
             "s6",
         }
+
+    def test_is_modified(self):
+        checker = CTLChecker(self.model)
+        assert not checker.is_modified()
+        checker.set_custom("EF", ef_correct)
+        assert checker.is_modified()
+        checker.set_custom("EF", ef_empty)
+        assert checker.is_modified()

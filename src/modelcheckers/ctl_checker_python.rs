@@ -116,14 +116,8 @@ impl PyCTLChecker {
             modifications: HashMap::new(),
         }
     }
-    fn check(&mut self, formula: PyCTLFormula) -> PyResult<HashSet<String>> {
-        let rsformula = formula.to_rust().ok_or(PyValueError::new_err(
-            "provided formula is not a valid CTL formula",
-        ))?;
-        Ok(self.inner.check(rsformula))
-    }
     #[pyo3(signature = (formula, *, debug = false))]
-    fn check_with_custom(
+    fn check(
         &mut self,
         py: Python,
         formula: PyCTLFormula,
@@ -157,7 +151,7 @@ impl PyCTLChecker {
         // we can just return inner.check() and expect it to be the modified values.
         Ok(self.inner.check(rsformula))
     }
-    fn add_custom(&mut self, target: String, func: Py<PyAny>) -> PyResult<()> {
+    fn set_custom(&mut self, target: String, func: Py<PyAny>) -> PyResult<()> {
         match target.as_str() {
             "EX" | "AX" | "EF" | "AF" | "EG" | "AG" | "EU" | "AU" => {
                 self.modifications.insert(target, func);
@@ -167,6 +161,9 @@ impl PyCTLChecker {
                 "{target} is not a valid modal operator"
             ))),
         }
+    }
+    fn is_modified(&self) -> bool {
+        !self.modifications.is_empty()
     }
 }
 
