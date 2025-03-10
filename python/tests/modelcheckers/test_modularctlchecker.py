@@ -2,9 +2,7 @@ from copy import copy
 
 import pytest
 
-from minictl.formulas import CTLFormula
-from minictl.modelcheckers import CTLChecker
-from minictl.models import Model, State
+from minictl import CTLFormula, CTLChecker, Model, State
 
 
 def ef(states: set[str], model: Model) -> set[str]:

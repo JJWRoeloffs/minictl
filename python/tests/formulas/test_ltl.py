@@ -1,7 +1,7 @@
 import string
 import pytest
 
-from minictl.formulas import LTLFormula as LF
+from minictl import LTLFormula as LF
 
 
 class TestCreationErrors:

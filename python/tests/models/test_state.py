@@ -1,4 +1,4 @@
-from minictl.models import State
+from minictl import State
 
 
 class TestState:

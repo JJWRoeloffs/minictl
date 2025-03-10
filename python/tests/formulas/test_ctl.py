@@ -1,7 +1,7 @@
 import string
 import pytest
 
-from minictl.formulas import CTLFormula as CF
+from minictl import CTLFormula as CF
 
 
 class TestCreationErrors:

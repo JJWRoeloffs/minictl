@@ -1,5 +1,5 @@
 import pytest
-from minictl.models import Model, State
+from minictl import Model, State
 
 
 class TestModelBasics:

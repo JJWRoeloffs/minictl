@@ -1,6 +1,4 @@
-from minictl.formulas import CTLFormula
-from minictl.modelcheckers import CTLChecker
-from minictl.models import State, Model
+from minictl import CTLFormula, CTLChecker, State, Model
 
 
 class TestCheckerBasics:
