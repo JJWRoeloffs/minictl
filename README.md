@@ -15,6 +15,14 @@ On top of Prepositional Logic ($\phi ::= p | \top | \bot | \neg \phi | \phi \lan
 - $\mathrm{A} (\phi U \psi)$
 - $\mathrm{E} (\phi U \psi)$
 
+### Installing
+
+The package can be installed with a simple `pip install minictl`.
+
+If pip complaints that `cargo` is not installed, this is because I did not compile the package for your combination of OS and python version (For example, `macOS Sequoia, python3.9`) This is especially likely for MacOS when using Apple Scilicon and a Python version below 3.11, as these are not supported by the tools upstream. If you run into this error and are on MacOS, use to python 3.11 or greater.
+
+If there is no python version supported for your OS, or you wish to use a different python version than I support (>= 3.9), the error can also be fixed by installing the rust toolchain on your computer, which you can do using `rustup` as explained [here](https://www.rust-lang.org/tools/install), proceeding with a default instalation. After rust is installed, the `pip install` command will work.
+
 ### Development
 
 ##### Python
