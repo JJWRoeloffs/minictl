@@ -108,7 +108,7 @@ impl<'a> LTLLexer<'a> {
     fn consume_lowercase_variable_or_keyword(&mut self) -> Option<Result<LTLToken, LTLParseError>> {
         let mut name = String::new();
         while let Some(&ch) = self.chars.peek() {
-            if ch.is_lowercase() || ch.is_numeric() {
+            if ch.is_lowercase() || ch.is_numeric() || matches!(ch, '=' | '_') {
                 name.push(ch);
                 self.chars.next();
             } else {
