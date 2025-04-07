@@ -6,6 +6,9 @@
 # |______|\____/  \_____||_|\_\   |_|     |_|  \_\ \____/   |_|   \____/  \_____|\____/ |______|
 #
 #
+# (Before following this example, it is smart to look at the minictl usage guide,
+# as this is an example for CTL model checking in general, not minictl specfically)
+#
 # In this example, we will look at a lock/unlock protocol checker.
 # Let's say we are writing an operating system, and want to make sure a file
 # cannot be written to by two different programs simultaneously.
@@ -192,6 +195,9 @@ print_verification_report(incorrect_retry_protocol)
 # some basic professional protocols in a way that would be done in industry!
 #
 # Hopefully, after reading this, you'll have an understanding of how these things might be used in practice.
+# For example, you could imagine how a similar proces might be used to verify the SQL transactions of a bank,
+# to make sure that the code that deals with money as integers keeps the total amount of money equal, or how
+# Microsoft might use something similar to verify there are no use after free's in the Windows kernel's C code.
 #
 # There is one thing you might be worried about: "The current protocols don't go back to start"
 # All of them indeed just go to "done" and stay there, there is no way for them to acquire something again.
