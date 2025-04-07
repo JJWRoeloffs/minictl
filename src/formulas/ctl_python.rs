@@ -147,7 +147,7 @@ impl fmt::Display for PyCTLFormula {
             "EG" => write!(f, "EG({})", get_argstr(0)),
             "AG" => write!(f, "AG({})", get_argstr(0)),
             "And" => write!(f, "({})∧({})", get_argstr(0), get_argstr(1)),
-            "Or" => write!(f, "({})∧({})", get_argstr(0), get_argstr(1)),
+            "Or" => write!(f, "({})∨({})", get_argstr(0), get_argstr(1)),
             "ImpliesR" => write!(f, "({})→({})", get_argstr(0), get_argstr(1)),
             "ImpliesL" => write!(f, "({})←({})", get_argstr(0), get_argstr(1)),
             "BiImplies" => write!(f, "({})↔({})", get_argstr(0), get_argstr(1)),

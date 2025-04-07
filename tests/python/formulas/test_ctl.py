@@ -128,7 +128,7 @@ class TestSymbols:
         assert str(CF.parse("p and q")) == "(p)∧(q)"
 
     def test_or(self):
-        assert str(CF.parse("p or q")) == "(p)∧(q)"
+        assert str(CF.parse("p or q")) == "(p)∨(q)"
 
     def test_implies_right(self):
         assert str(CF.parse("p -> q")) == "(p)→(q)"
@@ -148,13 +148,13 @@ class TestSymbols:
     def test_complex_1(self):
         assert (
             str(CF.parse("E[pU(q and p)] -> AXz or EG(A[rUw])"))
-            == "(E[(p)U((q)∧(p))])→((AX(z))∧(EG(A[(r)U(w)])))"
+            == "(E[(p)U((q)∧(p))])→((AX(z))∨(EG(A[(r)U(w)])))"
         )
 
     def test_complex_2(self):
         assert (
             str(CF.parse("!BOT -> !AG(p <-> q or A[zUw])"))
-            == "(¬(⊥))→(¬(AG((p)↔((q)∧(A[(z)U(w)])))))"
+            == "(¬(⊥))→(¬(AG((p)↔((q)∨(A[(z)U(w)])))))"
         )
 
 

@@ -143,7 +143,7 @@ impl fmt::Display for PyLTLFormula {
             "F" => write!(f, "F({})", get_argstr(0)),
             "G" => write!(f, "G({})", get_argstr(0)),
             "And" => write!(f, "({})∧({})", get_argstr(0), get_argstr(1)),
-            "Or" => write!(f, "({})∧({})", get_argstr(0), get_argstr(1)),
+            "Or" => write!(f, "({})∨({})", get_argstr(0), get_argstr(1)),
             "ImpliesR" => write!(f, "({})→({})", get_argstr(0), get_argstr(1)),
             "ImpliesL" => write!(f, "({})←({})", get_argstr(0), get_argstr(1)),
             "BiImplies" => write!(f, "({})↔({})", get_argstr(0), get_argstr(1)),

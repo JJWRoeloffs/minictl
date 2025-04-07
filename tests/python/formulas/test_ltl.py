@@ -111,7 +111,7 @@ class TestSymbols:
         assert str(LF.parse("p and q")) == "(p)∧(q)"
 
     def test_or(self):
-        assert str(LF.parse("p or q")) == "(p)∧(q)"
+        assert str(LF.parse("p or q")) == "(p)∨(q)"
 
     def test_implies_right(self):
         assert str(LF.parse("p -> q")) == "(p)→(q)"
@@ -134,13 +134,13 @@ class TestSymbols:
     def test_complex_1(self):
         assert (
             str(LF.parse("pU(q and p) -> Xz or G(rUw)"))
-            == "((p)U((q)∧(p)))→((X(z))∧(G((r)U(w))))"
+            == "((p)U((q)∧(p)))→((X(z))∨(G((r)U(w))))"
         )
 
     def test_complex_2(self):
         assert (
             str(LF.parse("!BOT -> !G(p <-> q or zWw)"))
-            == "(¬(⊥))→(¬(G((p)↔((q)∧((z)W(w))))))"
+            == "(¬(⊥))→(¬(G((p)↔((q)∨((z)W(w))))))"
         )
 
 
