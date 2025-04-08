@@ -13,7 +13,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Operating System :: POSIX :: Linux",
-  "Operating System :: MasOS",
+  "Operating System :: MacOS",
   "Operating System :: Microsoft :: Windows :: Windows 8",
   "Operating System :: Microsoft :: Windows :: Windows 8.1",
   "Operating System :: Microsoft :: Windows :: Windows 10",
