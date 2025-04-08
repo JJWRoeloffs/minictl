@@ -1,6 +1,6 @@
 # minictl
 
-A small model checker for Computational Tree Logic. It is not implemented to be the fastest or the most featureful, instead, it is written for a Mini-Master Project at _vu Amsterdam_ to be used as a playground for the Bachelor course on Modal Logic.
+A small model checker for Computational Tree Logic. It is not implemented to be the fastest or the most featureful, instead, it is written for a Mini-Master Project at _vu Amsterdam_ to be used as a playground for several courses on Modal Logic.
 
 For any Finite-state model $\mathcal{M}$, and a CTL formula $\phi$, MiniCTL can compute $\|\phi\|_{\mathcal{M}}$, which is to say, the set of states in which $\phi$ holds.
 

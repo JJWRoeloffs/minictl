@@ -5,10 +5,22 @@ build-backend = "maturin"
 [project]
 name = "minictl"
 requires-python = ">=3.9"
+description = "A small model checker for Computational Tree Logic"
+keywords = ["model-checking", "CTL", "kripke-structure"]
+license = { file = "LICENCE" }
 classifiers = [
   "Programming Language :: Rust",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MasOS",
+  "Operating System :: Microsoft :: Windows :: Windows 8",
+  "Operating System :: Microsoft :: Windows :: Windows 8.1",
+  "Operating System :: Microsoft :: Windows :: Windows 10",
+  "Operating System :: Microsoft :: Windows :: Windows 11",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
 ]
 dynamic = ["version"]
 dependencies = []
@@ -18,3 +30,7 @@ dev = ["pytest", "black"]
 
 [tool.maturin]
 features = ["pyo3/extension-module", "python"]
+
+[project.urls]
+"Homepage" = "https://github.com/JJWRoeloffs/minictl"
+"Bug Tracker" = "https://github.com/JJWRoeloffs/minictl/issues"
