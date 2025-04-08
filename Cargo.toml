@@ -1,7 +1,17 @@
 [package]
 name = "minictl"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
+description = "A small model checker for Computational Tree Logic"
+readme = "README.md"
+documentation = "https://github.com/JJWRoeloffs/minictl"
+homepage = "https://github.com/JJWRoeloffs/minictl"
+repository = "https://github.com/JJWRoeloffs/minictl"
+license = "MIT"
+license-file = "LICENSE"
+keywords = ["model-checking", "CTL", "kripke-structure"]
+categories = ["algorithms", "mathematics"]
+
 
 [lib]
 name = "minictl"
