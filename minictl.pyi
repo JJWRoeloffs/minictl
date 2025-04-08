@@ -142,7 +142,10 @@ class Model:
         pre_a(Y) = {s ∈ S | for all s', (s -> s' implies s' ∈ Y)}
         """
 
-    def get_next(self, name: str) -> Set[str]: ...
+    def get_next(self, name: str) -> Set[str]:
+        """Get the set of names of all the states that the input state
+        has outgoing connections to.
+        """
 
 # fmt: off
 class CTLChecker:

@@ -10,8 +10,8 @@
 # you'll reasonably nead when learning to do model checking
 #
 # For a more detailed description of what is possible, it is best to read the
-# tests at `tests/python` and the type information at `minictl.pyi`, as those provide an
-# exhaustive list of all supported classes fields and methods with examples.
+# information in `minictl.py`, which contains type information and docstrings for all
+# public functions. For usage examples, check these functions' tests under `tests/python`
 # This is expecially true if you plan to work on the project itself.
 #
 # ---- FORMULAS ----
@@ -19,7 +19,7 @@
 # First of all, you might want to create a formula: let's say `p ∧ q`.
 # The barest way to do it is to create the formula object entirely from scratch:
 
-from minictl import CTLChecker, CTLFormula
+from minictl import CTLFormula
 
 p_and_q = CTLFormula("And", CTLFormula("p"), CTLFormula("q"))
 
@@ -74,6 +74,7 @@ print(state.contains("r"))
 # You can get a state out of a model by using the `.get_state()` method.
 # You can get all names of states in a model by using the `.all()` method.
 # You can get all names of states containing some variable by using the `.all_containing()` method.
+# You can get the names of states a state has outgoing connections to by using the `.get_next()` method.
 
 from minictl import Model
 
@@ -82,12 +83,15 @@ our_state = model.get_state("s1")
 print(our_state.contains("p"), our_state.contains("r"))
 print(model.all())
 print(model.all_containing("p"))
+print(model.get_next("s1"))
 
 #
 # ---- Checker ----
 #
 # You can create a checker by providing it with a model. You can then call the `.check()`
 # method with a formula to get the set of state names in which the formula is true.
+
+from minictl import CTLChecker
 
 s1 = State("s1", {"p"})
 s2 = State("s2", {"p", "q"})
