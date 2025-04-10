@@ -18,9 +18,9 @@
 # example I could think of: a traffic light.
 #
 # Consider a single traffic light that has the following states: red, yellow, green.
-# After red comes yellow, after yellow comes green, and after green comes red again.
-# Let's say we want to prove that there always is a yellow light after red.
-# More formally: red -> AX(yellow)
+# After red comes green, after green comes yellow, and after yellow comes red again.
+# Let's say we want to prove that there always is a yellow light after green.
+# More formally: green -> AX(yellow)
 #
 # Let's start by turning the traffic light system into a Kripke frame.
 # For that, we first have to specify our three possible states.
@@ -44,15 +44,15 @@ from minictl import Model
 
 model = Model(
     [s1, s2, s3],
-    {"s1": ["s2"], "s2": ["s3"], "s3": ["s1"]},
+    {"s1": ["s3"], "s2": ["s1"], "s3": ["s2"]},
 )
 
 # Now that we have the model, we want to have our formula to test. We said before that
-# this will be red -> AX(yellow). We can construct this formula by simply parsing it out:
+# this will be green -> AX(yellow). We can construct this formula by simply parsing it out:
 
 from minictl import CTLFormula
 
-formula = CTLFormula.parse("red -> AX(yellow)")
+formula = CTLFormula.parse("green -> AX(yellow)")
 
 # Now that we have this, we want to do our final step: checking if the formula is true
 # in the model we created.
