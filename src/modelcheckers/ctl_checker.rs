@@ -56,10 +56,7 @@ impl<'a> CTLCheckerInner<'a> {
                 .copied()
                 .collect::<HashSet<usize>>();
             if next == *set {
-                return match set {
-                    Cow::Owned(owned) => owned,
-                    Cow::Borrowed(_) => next,
-                };
+                return next;
             }
             set = Cow::Owned(next);
         }
@@ -71,10 +68,7 @@ impl<'a> CTLCheckerInner<'a> {
         loop {
             let next: HashSet<usize> = model.pre_a_idx(&set).union(&set).copied().collect();
             if next == *set {
-                return match set {
-                    Cow::Owned(owned) => owned,
-                    Cow::Borrowed(_) => next,
-                };
+                return next;
             }
             set = Cow::Owned(next);
         }
@@ -84,12 +78,14 @@ impl<'a> CTLCheckerInner<'a> {
             return ret;
         }
         use CTLFormula as F;
+        // We do the re-writing as we go instead of on the formula immediately.
+        // I know it's probably slower this way, but it's also kinda fine.
         match formula {
             F::Top => self.memoise_alloc(formula, model.all_idx()),
             F::Bot => self.memoise_alloc(formula, HashSet::new()),
             F::Atomic(var) => self.memoise_alloc(formula, model.all_containing_idx(&var.inner)),
             F::Neg(inner) => {
-                let ret = model.all_except_idx(self.check(&inner, model));
+                let ret = model.all_except_idx(self.check(inner, model));
                 self.memoise_alloc(formula, ret)
             }
             F::And(lhs, rhs) => {
@@ -225,7 +221,7 @@ impl CTLChecker {
             result_arena: &result_arena,
             formula_arena: &formula_arena,
         };
-        let ret = self.model.get_names(solver.check(&formula, &self.model));
+        let ret = self.model.get_names(solver.check(formula, &self.model));
 
         let cache_update: HashMap<Box<CTLFormula>, HashSet<usize>> = solver
             .map()
