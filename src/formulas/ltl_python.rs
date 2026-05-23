@@ -11,9 +11,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 
 use std::fmt;
-use std::sync::Arc;
 
-use crate::formulas::{ltl_types::memoize_ltl, LTLVariable};
+use crate::formulas::LTLVariable;
 
 use super::{parse_ltl, LTLFormula};
 
@@ -98,30 +97,30 @@ impl PyLTLFormula {
         }
     }
     #[inline(always)]
-    fn arg_to_rust(&self, index: usize) -> Option<Arc<LTLFormula>> {
+    fn arg_to_rust(&self, index: usize) -> Option<Box<LTLFormula>> {
         self.arguments.get(index)?.to_rust()
     }
 
-    pub(crate) fn to_rust(&self) -> Option<Arc<LTLFormula>> {
-        use LTLFormula as F;
+    pub(crate) fn to_rust(&self) -> Option<Box<LTLFormula>> {
+        use super::ltl_formula_macros as f;
         let ret = match self.name.as_str() {
-            "TOP" => Arc::new(F::Top),
-            "BOT" => Arc::new(F::Bot),
-            "Neg" => Arc::new(F::Neg(self.arg_to_rust(0)?)),
-            "X" => Arc::new(F::X(self.arg_to_rust(0)?)),
-            "F" => Arc::new(F::F(self.arg_to_rust(0)?)),
-            "G" => Arc::new(F::G(self.arg_to_rust(0)?)),
-            "And" => Arc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "Or" => Arc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesR" => Arc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesL" => Arc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "BiImplies" => Arc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "U" => Arc::new(F::U(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "W" => Arc::new(F::W(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "R" => Arc::new(F::R(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            other => Arc::new(F::Atomic(LTLVariable::new(other.to_string()))),
+            "TOP" => f::top!(),
+            "BOT" => f::bot!(),
+            "Neg" => f::neg!(self.arg_to_rust(0)?),
+            "X" => f::x!(self.arg_to_rust(0)?),
+            "F" => f::f!(self.arg_to_rust(0)?),
+            "G" => f::g!(self.arg_to_rust(0)?),
+            "And" => f::and!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "Or" => f::or!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "ImpliesR" => f::impies_r!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "ImpliesL" => f::impies_l!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "BiImplies" => f::implies_bi!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "U" => f::u!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "W" => f::w!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "R" => f::r!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            other => f::atom!(other.to_string()),
         };
-        Some(memoize_ltl(&ret))
+        Some(ret)
     }
 }
 

@@ -36,20 +36,20 @@ pub enum CTLFormula {
 
 impl CTLFormula {
     pub fn for_each_child(&self, mut f: impl FnMut(&CTLFormula)) {
-        use CTLFormula::*;
+        use CTLFormula as F;
         match self {
-            Neg(x) | EX(x) | EF(x) | EG(x) | AX(x) | AF(x) | AG(x) => f(x),
-            And(l, r)
-            | Or(l, r)
-            | ImpliesR(l, r)
-            | ImpliesL(l, r)
-            | BiImplies(l, r)
-            | EU(l, r)
-            | AU(l, r) => {
+            F::Neg(x) | F::EX(x) | F::EF(x) | F::EG(x) | F::AX(x) | F::AF(x) | F::AG(x) => f(x),
+            F::And(l, r)
+            | F::Or(l, r)
+            | F::ImpliesR(l, r)
+            | F::ImpliesL(l, r)
+            | F::BiImplies(l, r)
+            | F::EU(l, r)
+            | F::AU(l, r) => {
                 f(l);
                 f(r);
             }
-            Top | Bot | Atomic(_) => {}
+            F::Top | F::Bot | F::Atomic(_) => {}
         }
     }
     pub fn collect_subformulas(&self) -> HashSet<CTLFormula> {

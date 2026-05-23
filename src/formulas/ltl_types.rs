@@ -3,7 +3,6 @@
 
 use super::MLVariable;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct LTLVariable {
@@ -16,101 +15,158 @@ impl LTLVariable {
 }
 impl MLVariable for LTLFormula {}
 
-// We are using Arc here because pyo3 demands it.
-// pyo3 exported classes need to be sendable between threads, even when
-// not planning to do multithreading. While I can try to implement Send for
-// `HashMap<Rc<CTLFormula>, HashSet<usize>>` in some safe manner, I think
-// the overhead of Arc over Rc is low enough I'll just do it this way.
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub enum LTLFormula {
     Top,
     Bot,
     Atomic(LTLVariable),
-    Neg(Arc<LTLFormula>),
-    And(Arc<LTLFormula>, Arc<LTLFormula>),
-    Or(Arc<LTLFormula>, Arc<LTLFormula>),
-    ImpliesR(Arc<LTLFormula>, Arc<LTLFormula>),
-    ImpliesL(Arc<LTLFormula>, Arc<LTLFormula>),
-    BiImplies(Arc<LTLFormula>, Arc<LTLFormula>),
-    X(Arc<LTLFormula>),
-    F(Arc<LTLFormula>),
-    G(Arc<LTLFormula>),
-    U(Arc<LTLFormula>, Arc<LTLFormula>),
-    W(Arc<LTLFormula>, Arc<LTLFormula>),
-    R(Arc<LTLFormula>, Arc<LTLFormula>),
+    Neg(Box<LTLFormula>),
+    And(Box<LTLFormula>, Box<LTLFormula>),
+    Or(Box<LTLFormula>, Box<LTLFormula>),
+    ImpliesR(Box<LTLFormula>, Box<LTLFormula>),
+    ImpliesL(Box<LTLFormula>, Box<LTLFormula>),
+    BiImplies(Box<LTLFormula>, Box<LTLFormula>),
+    X(Box<LTLFormula>),
+    F(Box<LTLFormula>),
+    G(Box<LTLFormula>),
+    U(Box<LTLFormula>, Box<LTLFormula>),
+    W(Box<LTLFormula>, Box<LTLFormula>),
+    R(Box<LTLFormula>, Box<LTLFormula>),
 }
 
 impl LTLFormula {
-    pub(crate) fn memoize(
-        &self,
-        cache: &mut HashMap<LTLFormula, Arc<LTLFormula>>,
-    ) -> Arc<LTLFormula> {
-        use LTLFormula as F;
-        if let Some(cached) = cache.get(self) {
-            return cached.clone();
-        }
-
-        let result = match self {
-            F::Top => Arc::new(F::Top),
-            F::Bot => Arc::new(F::Bot),
-            F::Atomic(v) => Arc::new(F::Atomic(v.clone())),
-            F::Neg(inner) => Arc::new(F::Neg(inner.memoize(cache))),
-            F::And(lhs, rhs) => Arc::new(F::And(lhs.memoize(cache), rhs.memoize(cache))),
-            F::Or(lhs, rhs) => Arc::new(F::Or(lhs.memoize(cache), rhs.memoize(cache))),
-            F::ImpliesR(lhs, rhs) => Arc::new(F::ImpliesR(lhs.memoize(cache), rhs.memoize(cache))),
-            F::ImpliesL(lhs, rhs) => Arc::new(F::ImpliesL(lhs.memoize(cache), rhs.memoize(cache))),
-            F::BiImplies(lhs, rhs) => {
-                Arc::new(F::BiImplies(lhs.memoize(cache), rhs.memoize(cache)))
-            }
-            F::X(inner) => Arc::new(F::X(inner.memoize(cache))),
-            F::F(inner) => Arc::new(F::F(inner.memoize(cache))),
-            F::G(inner) => Arc::new(F::G(inner.memoize(cache))),
-            F::U(lhs, rhs) => Arc::new(F::U(lhs.memoize(cache), rhs.memoize(cache))),
-            F::W(lhs, rhs) => Arc::new(F::W(lhs.memoize(cache), rhs.memoize(cache))),
-            F::R(lhs, rhs) => Arc::new(F::R(lhs.memoize(cache), rhs.memoize(cache))),
-        };
-
-        cache.insert(self.clone(), result.clone());
-        result
-    }
-    pub(crate) fn total_size(&self) -> usize {
+    pub(crate) fn for_each_child(&self, mut f: impl FnMut(&LTLFormula)) {
         use LTLFormula as F;
         match self {
-            F::Atomic(_) => 1,
-            F::Top | F::Bot => 1,
-            F::And(lhs, rhs)
-            | F::Or(lhs, rhs)
-            | F::ImpliesR(lhs, rhs)
-            | F::ImpliesL(lhs, rhs)
-            | F::BiImplies(lhs, rhs)
-            | F::U(lhs, rhs)
-            | F::W(lhs, rhs)
-            | F::R(lhs, rhs) => 1 + lhs.total_size() + rhs.total_size(),
-            F::X(inner) | F::F(inner) | F::G(inner) | F::Neg(inner) => 1 + inner.total_size(),
+            F::X(x) | F::F(x) | F::G(x) | F::Neg(x) => f(x),
+            F::And(l, r)
+            | F::Or(l, r)
+            | F::ImpliesR(l, r)
+            | F::ImpliesL(l, r)
+            | F::BiImplies(l, r)
+            | F::U(l, r)
+            | F::W(l, r)
+            | F::R(l, r) => {
+                f(l);
+                f(r);
+            }
+            F::Top | F::Bot | F::Atomic(_) => {}
         }
     }
-}
-
-#[derive(Debug, Default)]
-pub struct LTLFactory {
-    cache: HashMap<LTLFormula, Arc<LTLFormula>>,
-}
-
-impl LTLFactory {
-    pub fn new(cache: HashMap<LTLFormula, Arc<LTLFormula>>) -> Self {
-        Self { cache }
-    }
-    pub fn create(&mut self, formula: LTLFormula) -> Arc<LTLFormula> {
-        formula.memoize(&mut self.cache)
-    }
-
-    pub fn actual_size(&self) -> usize {
-        self.cache.len()
+    pub fn total_size(&self) -> usize {
+        let mut sum = 1;
+        self.for_each_child(|child| {
+            sum += child.total_size();
+        });
+        sum
     }
 }
 
-#[inline(always)]
-pub fn memoize_ltl(formula: &LTLFormula) -> Arc<LTLFormula> {
-    let mut cache = HashMap::new();
-    formula.memoize(&mut cache)
+pub(crate) mod ltl_formula_macros {
+    #![allow(unused)]
+
+    macro_rules! top {
+        () => {
+            Box::new(LTLFormula::Top)
+        };
+    }
+    pub(crate) use top;
+
+    macro_rules! bot {
+        () => {
+            Box::new(LTLFormula::Bot)
+        };
+    }
+    pub(crate) use bot;
+
+    macro_rules! atom {
+        ($inner:expr) => {
+            Box::new(LTLFormula::Atomic(LTLVariable::new($inner)))
+        };
+    }
+    pub(crate) use atom;
+
+    macro_rules! neg {
+        ($inner:expr) => {
+            Box::new(LTLFormula::Neg($inner))
+        };
+    }
+    pub(crate) use neg;
+
+    macro_rules! and {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::And($lhs, $rhs))
+        };
+    }
+    pub(crate) use and;
+
+    macro_rules! or {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::Or($lhs, $rhs))
+        };
+    }
+    pub(crate) use or;
+
+    macro_rules! impies_r {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::ImpliesR($lhs, $rhs))
+        };
+    }
+    pub(crate) use impies_r;
+
+    macro_rules! impies_l {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::ImpliesL($lhs, $rhs))
+        };
+    }
+    pub(crate) use impies_l;
+
+    macro_rules! implies_bi {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::BiImplies($lhs, $rhs))
+        };
+    }
+    pub(crate) use implies_bi;
+
+    macro_rules! x {
+        ($inner:expr) => {
+            Box::new(LTLFormula::X($inner))
+        };
+    }
+    pub(crate) use x;
+
+    macro_rules! f {
+        ($inner:expr) => {
+            Box::new(LTLFormula::F($inner))
+        };
+    }
+    pub(crate) use f;
+
+    macro_rules! g {
+        ($inner:expr) => {
+            Box::new(LTLFormula::G($inner))
+        };
+    }
+    pub(crate) use g;
+
+    macro_rules! u {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::U($lhs, $rhs))
+        };
+    }
+    pub(crate) use u;
+
+    macro_rules! w {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::W($lhs, $rhs))
+        };
+    }
+    pub(crate) use w;
+
+    macro_rules! r {
+        ($lhs:expr, $rhs:expr) => {
+            Box::new(LTLFormula::R($lhs, $rhs))
+        };
+    }
+    pub(crate) use r;
 }

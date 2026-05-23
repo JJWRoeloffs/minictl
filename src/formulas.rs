@@ -17,7 +17,8 @@ pub use ctl_types::{CTLFormula, CTLVariable};
 mod ltl_parse;
 mod ltl_types;
 pub use ltl_parse::{parse_ltl, LTLParseError};
-pub use ltl_types::{memoize_ltl, LTLFactory, LTLFormula, LTLVariable};
+pub(crate) use ltl_types::ltl_formula_macros;
+pub use ltl_types::{LTLFormula, LTLVariable};
 
 pub trait MLVariable: Eq + Hash {}
 
