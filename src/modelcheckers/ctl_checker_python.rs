@@ -1,9 +1,8 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 use super::CTLChecker;
 use crate::formulas::ctl_python::PyCTLFormula;
-use crate::formulas::{CTLFactory, CTLFormula};
+use crate::formulas::CTLFormula;
 use crate::models::models_python::PyModel;
 
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
@@ -64,42 +63,42 @@ impl PyCTLChecker {
     fn apply_modification(
         &mut self,
         py: Python,
-        formula: Arc<CTLFormula>,
+        formula: &CTLFormula,
     ) -> PyResult<HashSet<String>> {
         use CTLFormula as F;
-        match formula.as_ref() {
+        match formula {
             F::EX(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "EX", &[inner_res])
             },
             F::AX(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "AX", &[inner_res])
             },
             F::EF(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "EF", &[inner_res])
             },
             F::AF(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "AF", &[inner_res])
             },
             F::EG(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "EG", &[inner_res])
             },
             F::AG(inner) => {
-                let inner_res = self.inner.check(inner.clone());
+                let inner_res = self.inner.check(inner);
                 self.call_modification(py, "AG", &[inner_res])
             },
             F::EU(lhs, rhs) => {
-                let lhs_res = self.inner.check(lhs.clone());
-                let rhs_res = self.inner.check(rhs.clone());
+                let lhs_res = self.inner.check(lhs);
+                let rhs_res = self.inner.check(rhs);
                 self.call_modification(py, "EU", &[lhs_res, rhs_res])
             },
             F::AU(lhs, rhs) => {
-                let lhs_res = self.inner.check(lhs.clone());
-                let rhs_res = self.inner.check(rhs.clone());
+                let lhs_res = self.inner.check(lhs);
+                let rhs_res = self.inner.check(rhs);
                 self.call_modification(py, "AU", &[lhs_res, rhs_res])
             },
             _ => Err(PyRuntimeError::new_err("Called modification on something that cannot recieve one. This is likely an internal error."))
@@ -126,33 +125,31 @@ impl PyCTLChecker {
         debug: bool,
     ) -> PyResult<HashSet<String>> {
         self.called = true;
-        let mut ctlfactory = CTLFactory::default();
-        let rsformula = ctlfactory.create(formula.to_rust().ok_or(PyValueError::new_err(
+        let rsformula = formula.to_rust().ok_or(PyValueError::new_err(
             "provided formula is not a valid CTL formula",
-        ))?);
-        let mut formulas = ctlfactory
-            .get_cache()
-            .iter()
-            .filter(|(k, _v)| self.has_modification(k))
-            .map(|(_k, v)| v.clone())
-            .collect::<Vec<Arc<CTLFormula>>>();
+        ))?;
+        let mut formulas = rsformula
+            .collect_subformulas()
+            .into_iter()
+            .filter(|f| self.has_modification(f))
+            .collect::<Vec<CTLFormula>>();
         formulas.sort_by_cached_key(|f| f.total_size());
 
         // Since the formulas are sorted by size, we know we get the lowest in the tree
         // first and only then the bigger ones that might have those lowers as dependencies.
         // After that, we can simply rely on the cache.
-        for f in formulas.iter() {
-            let res = self.apply_modification(py, f.clone())?;
+        for f in formulas.into_iter() {
+            let res = self.apply_modification(py, &f)?;
             if debug {
-                let expected = self.inner.check(f.clone());
-                compare_sets(&res, &expected, f)?;
+                let expected = self.inner.check(&f);
+                compare_sets(&res, &expected, &f)?;
             }
-            self.inner.update_cache(f.clone(), res);
+            self.inner.update_cache(f, res);
         }
 
         // Since the inner's cache is updated with the custom algorithm,
         // we can just return inner.check() and expect it to be the modified values.
-        Ok(self.inner.check(rsformula))
+        Ok(self.inner.check(&rsformula))
     }
     fn set_custom(&mut self, target: String, func: Py<PyAny>) -> PyResult<()> {
         if self.called {

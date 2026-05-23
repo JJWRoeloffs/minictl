@@ -1,9 +1,9 @@
 use std::iter::Peekable;
 use std::str::Chars;
-use std::sync::Arc;
 use thiserror::Error;
 
-use super::ctl_types::{CTLFormula, CTLVariable};
+use super::ctl_formula_macros as f;
+use super::{CTLFormula, CTLVariable};
 
 #[derive(Debug, Clone, PartialEq)]
 enum CTLToken {
@@ -192,10 +192,10 @@ impl<'a> CTLParser<'a> {
             }
         }
     }
-    fn parse(&mut self) -> Result<Arc<CTLFormula>, CTLParseError> {
+    fn parse(&mut self) -> Result<Box<CTLFormula>, CTLParseError> {
         self.parse_expression(1)
     }
-    fn parse_expression(&mut self, min_precedence: u8) -> Result<Arc<CTLFormula>, CTLParseError> {
+    fn parse_expression(&mut self, min_precedence: u8) -> Result<Box<CTLFormula>, CTLParseError> {
         use CTLFormula as F;
         use CTLToken as T;
         let mut left = self.parse_primary()?;
@@ -215,7 +215,7 @@ impl<'a> CTLParser<'a> {
             let token = self.tokens.next().unwrap()?;
             let right = self.parse_expression(token_precedence + 1)?;
 
-            left = Arc::new(match token {
+            left = Box::new(match token {
                 T::ImpliesR => F::ImpliesR(left, right),
                 T::ImpliesL => F::ImpliesL(left, right),
                 T::BiImplies => F::BiImplies(left, right),
@@ -227,20 +227,19 @@ impl<'a> CTLParser<'a> {
 
         Ok(left)
     }
-    fn parse_primary(&mut self) -> Result<Arc<CTLFormula>, CTLParseError> {
-        use CTLFormula as F;
+    fn parse_primary(&mut self) -> Result<Box<CTLFormula>, CTLParseError> {
         use CTLToken as T;
         match self.tokens.next() {
-            Some(Ok(T::Top)) => Ok(Arc::new(F::Top)),
-            Some(Ok(T::Bot)) => Ok(Arc::new(F::Bot)),
-            Some(Ok(T::Variable(var))) => Ok(Arc::new(F::Atomic(CTLVariable::new(var)))),
-            Some(Ok(T::Not)) => Ok(Arc::new(F::Neg(self.parse_primary()?))),
-            Some(Ok(T::EX)) => Ok(Arc::new(F::EX(self.parse_primary()?))),
-            Some(Ok(T::AX)) => Ok(Arc::new(F::AX(self.parse_primary()?))),
-            Some(Ok(T::EF)) => Ok(Arc::new(F::EF(self.parse_primary()?))),
-            Some(Ok(T::AF)) => Ok(Arc::new(F::AF(self.parse_primary()?))),
-            Some(Ok(T::EG)) => Ok(Arc::new(F::EG(self.parse_primary()?))),
-            Some(Ok(T::AG)) => Ok(Arc::new(F::AG(self.parse_primary()?))),
+            Some(Ok(T::Top)) => Ok(f::top!()),
+            Some(Ok(T::Bot)) => Ok(f::bot!()),
+            Some(Ok(T::Variable(var))) => Ok(f::atom!(var)),
+            Some(Ok(T::Not)) => Ok(f::neg!(self.parse_primary()?)),
+            Some(Ok(T::EX)) => Ok(f::ex!(self.parse_primary()?)),
+            Some(Ok(T::AX)) => Ok(f::ax!(self.parse_primary()?)),
+            Some(Ok(T::EF)) => Ok(f::ef!(self.parse_primary()?)),
+            Some(Ok(T::AF)) => Ok(f::af!(self.parse_primary()?)),
+            Some(Ok(T::EG)) => Ok(f::eg!(self.parse_primary()?)),
+            Some(Ok(T::AG)) => Ok(f::ag!(self.parse_primary()?)),
             Some(Ok(T::LParen)) => {
                 let expr = self.parse_expression(1)?;
                 self.expect_token(T::RParen, "Expected closing parentheses")?;
@@ -252,7 +251,7 @@ impl<'a> CTLParser<'a> {
                 self.expect_token(T::U, "Expected U after E[ for E[pUq] construction")?;
                 let right = self.parse_primary()?;
                 self.expect_token(T::RSquare, "Expected ] after E[.U. for E[pUq] construction")?;
-                Ok(Arc::new(F::EU(left, right)))
+                Ok(f::eu!(left, right))
             }
             Some(Ok(T::A)) => {
                 self.expect_token(T::LSquare, "Expected [ after A for A[pUq] construction")?;
@@ -260,7 +259,7 @@ impl<'a> CTLParser<'a> {
                 self.expect_token(T::U, "Expected U after A[ for A[pUq] construction")?;
                 let right = self.parse_primary()?;
                 self.expect_token(T::RSquare, "Expected ] after A[.U. for A[pUq] construction")?;
-                Ok(Arc::new(F::AU(left, right)))
+                Ok(f::au!(left, right))
             }
             Some(Ok(other)) => Err(CTLParseError::UnexpectedToken(format!("{:?}", other))),
             Some(Err(error)) => Err(error),
@@ -272,7 +271,7 @@ impl<'a> CTLParser<'a> {
 }
 
 #[inline(always)]
-pub fn parse_ctl(input: &str) -> Result<Arc<CTLFormula>, CTLParseError> {
+pub fn parse_ctl(input: &str) -> Result<Box<CTLFormula>, CTLParseError> {
     let lexer = CTLLexer::new(input);
     let mut parser = CTLParser::new(lexer);
     parser.parse()

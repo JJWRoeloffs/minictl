@@ -12,7 +12,7 @@ mod ctl_parse;
 mod ctl_types;
 pub use ctl_parse::{parse_ctl, CTLParseError};
 pub(crate) use ctl_types::ctl_formula_macros;
-pub use ctl_types::{memoize_ctl, CTLFactory, CTLFormula, CTLVariable};
+pub use ctl_types::{CTLFormula, CTLVariable};
 
 mod ltl_parse;
 mod ltl_types;

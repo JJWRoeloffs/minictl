@@ -8,11 +8,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 
 use std::fmt;
-use std::sync::Arc;
 
-use crate::formulas::{ctl_types::memoize_ctl, CTLVariable};
-
-use super::{parse_ctl, CTLFormula};
+use super::ctl_formula_macros as f;
+use super::{parse_ctl, CTLFormula, CTLVariable};
 
 /// The python view into the CTLFormula.
 /// This class is frozen. Objects, once created, cannot be modified.
@@ -96,32 +94,31 @@ impl PyCTLFormula {
         }
     }
     #[inline(always)]
-    fn arg_to_rust(&self, index: usize) -> Option<Arc<CTLFormula>> {
+    fn arg_to_rust(&self, index: usize) -> Option<Box<CTLFormula>> {
         self.arguments.get(index)?.to_rust()
     }
 
-    pub(crate) fn to_rust(&self) -> Option<Arc<CTLFormula>> {
-        use CTLFormula as F;
+    pub(crate) fn to_rust(&self) -> Option<Box<CTLFormula>> {
         let ret = match self.name.as_str() {
-            "TOP" => Arc::new(F::Top),
-            "BOT" => Arc::new(F::Bot),
-            "Neg" => Arc::new(F::Neg(self.arg_to_rust(0)?)),
-            "EX" => Arc::new(F::EX(self.arg_to_rust(0)?)),
-            "AX" => Arc::new(F::AX(self.arg_to_rust(0)?)),
-            "EF" => Arc::new(F::EF(self.arg_to_rust(0)?)),
-            "AF" => Arc::new(F::AF(self.arg_to_rust(0)?)),
-            "EG" => Arc::new(F::EG(self.arg_to_rust(0)?)),
-            "AG" => Arc::new(F::AG(self.arg_to_rust(0)?)),
-            "And" => Arc::new(F::And(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "Or" => Arc::new(F::Or(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesR" => Arc::new(F::ImpliesR(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "ImpliesL" => Arc::new(F::ImpliesL(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "BiImplies" => Arc::new(F::BiImplies(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "EU" => Arc::new(F::EU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            "AU" => Arc::new(F::AU(self.arg_to_rust(0)?, self.arg_to_rust(1)?)),
-            other => Arc::new(F::Atomic(CTLVariable::new(other.to_string()))),
+            "TOP" => f::top!(),
+            "BOT" => f::bot!(),
+            "Neg" => f::neg!(self.arg_to_rust(0)?),
+            "EX" => f::ex!(self.arg_to_rust(0)?),
+            "AX" => f::ax!(self.arg_to_rust(0)?),
+            "EF" => f::ef!(self.arg_to_rust(0)?),
+            "AF" => f::af!(self.arg_to_rust(0)?),
+            "EG" => f::eg!(self.arg_to_rust(0)?),
+            "AG" => f::ag!(self.arg_to_rust(0)?),
+            "And" => f::and!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "Or" => f::or!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "ImpliesR" => f::impies_r!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "ImpliesL" => f::impies_l!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "BiImplies" => f::implies_bi!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "EU" => f::eu!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            "AU" => f::au!(self.arg_to_rust(0)?, self.arg_to_rust(1)?),
+            other => f::atom!(other.to_string()),
         };
-        Some(memoize_ctl(&ret))
+        Some(ret)
     }
 }
 
@@ -164,22 +161,13 @@ impl PyCTLFormula {
     #[pyo3(signature=(name, *py_args))]
     fn new(name: String, py_args: &Bound<'_, PyTuple>) -> PyResult<Self> {
         match name.as_str() {
-            "TOP" => Self::new_with_pyargs(name, py_args, 0),
-            "BOT" => Self::new_with_pyargs(name, py_args, 0),
-            "Neg" => Self::new_with_pyargs(name, py_args, 1),
-            "EX" => Self::new_with_pyargs(name, py_args, 1),
-            "AX" => Self::new_with_pyargs(name, py_args, 1),
-            "EF" => Self::new_with_pyargs(name, py_args, 1),
-            "AF" => Self::new_with_pyargs(name, py_args, 1),
-            "EG" => Self::new_with_pyargs(name, py_args, 1),
-            "AG" => Self::new_with_pyargs(name, py_args, 1),
-            "And" => Self::new_with_pyargs(name, py_args, 2),
-            "Or" => Self::new_with_pyargs(name, py_args, 2),
-            "ImpliesR" => Self::new_with_pyargs(name, py_args, 2),
-            "ImpliesL" => Self::new_with_pyargs(name, py_args, 2),
-            "BiImplies" => Self::new_with_pyargs(name, py_args, 2),
-            "EU" => Self::new_with_pyargs(name, py_args, 2),
-            "AU" => Self::new_with_pyargs(name, py_args, 2),
+            "TOP" | "BOT" => Self::new_with_pyargs(name, py_args, 0),
+            "Neg" | "EX" | "AX" | "EF" | "AF" | "EG" | "AG" => {
+                Self::new_with_pyargs(name, py_args, 1)
+            }
+            "And" | "Or" | "ImpliesR" | "ImpliesL" | "BiImplies" | "EU" | "AU" => {
+                Self::new_with_pyargs(name, py_args, 2)
+            }
             _ if py_args.is_empty() => {
                 if name
                     .chars()
