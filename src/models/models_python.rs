@@ -17,7 +17,7 @@ impl From<ModelCreationError> for PyErr {
 ///
 /// You can create them with the State("name", {"var1", "var2"}) constructor,
 /// providing the state name and a set of variables that are true in the state.
-#[pyclass(module = "minictl", name = "State", get_all, frozen)]
+#[pyclass(module = "minictl", name = "State", get_all, frozen, from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PyState {
     pub name: String,
@@ -48,7 +48,7 @@ impl PyState {
 /// providing a list of states and a hashmap that represents the kripke frame.
 /// This constructor throws a value error when the arguments do not lead to a valid frame,
 /// e.g. when not all states have outgoing edges, or if edges point to unknown states.
-#[pyclass(module = "minictl", name = "Model", frozen)]
+#[pyclass(module = "minictl", name = "Model", frozen, from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PyModel {
     states: Vec<PyState>,

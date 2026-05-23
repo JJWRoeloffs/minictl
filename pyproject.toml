@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "minictl"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "A small model checker for Computational Tree Logic"
 keywords = ["model-checking", "CTL", "kripke-structure"]
 license = { file = "LICENSE" }

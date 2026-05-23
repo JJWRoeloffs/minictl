@@ -27,7 +27,8 @@ use super::{parse_ctl, CTLFormula, CTLVariable};
     frozen,
     eq,
     hash,
-    str
+    str,
+    from_py_object
 )]
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct PyCTLFormula {
@@ -49,11 +50,11 @@ impl PyCTLFormula {
         nr_args: usize,
     ) -> PyResult<Self> {
         let nr_found = py_arguments.len();
+        let mut arguments = Vec::with_capacity(nr_found);
         if nr_found == nr_args {
-            let arguments = py_arguments
-                .iter()
-                .map(|item| item.extract::<PyCTLFormula>())
-                .collect::<PyResult<Vec<PyCTLFormula>>>()?;
+            for item in py_arguments.iter() {
+                arguments.push(item.extract::<PyCTLFormula>()?);
+            }
             Ok(Self { name, arguments })
         } else {
             Err(PyValueError::new_err(
