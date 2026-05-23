@@ -35,58 +35,42 @@ pub enum CTLFormula {
 }
 
 impl CTLFormula {
-    fn collect_subformulas_into(&self, out: &mut HashSet<CTLFormula>) {
-        if !out.insert(self.clone()) {
-            return;
-        }
+    pub fn for_each_child(&self, mut f: impl FnMut(&CTLFormula)) {
+        use CTLFormula::*;
         match self {
-            CTLFormula::Top | CTLFormula::Bot | CTLFormula::Atomic(_) => {}
-            CTLFormula::Neg(f)
-            | CTLFormula::EX(f)
-            | CTLFormula::EF(f)
-            | CTLFormula::EG(f)
-            | CTLFormula::AX(f)
-            | CTLFormula::AF(f)
-            | CTLFormula::AG(f) => {
-                f.collect_subformulas_into(out);
+            Neg(x) | EX(x) | EF(x) | EG(x) | AX(x) | AF(x) | AG(x) => f(x),
+            And(l, r)
+            | Or(l, r)
+            | ImpliesR(l, r)
+            | ImpliesL(l, r)
+            | BiImplies(l, r)
+            | EU(l, r)
+            | AU(l, r) => {
+                f(l);
+                f(r);
             }
-            CTLFormula::And(l, r)
-            | CTLFormula::Or(l, r)
-            | CTLFormula::ImpliesR(l, r)
-            | CTLFormula::ImpliesL(l, r)
-            | CTLFormula::BiImplies(l, r)
-            | CTLFormula::EU(l, r)
-            | CTLFormula::AU(l, r) => {
-                l.collect_subformulas_into(out);
-                r.collect_subformulas_into(out);
-            }
+            Top | Bot | Atomic(_) => {}
         }
     }
     pub fn collect_subformulas(&self) -> HashSet<CTLFormula> {
-        let mut out = HashSet::new();
-        self.collect_subformulas_into(&mut out);
-        out
+        let mut set = HashSet::new();
+        fn go(node: &CTLFormula, set: &mut HashSet<CTLFormula>) {
+            if !set.insert(node.clone()) {
+                return;
+            }
+            node.for_each_child(|child| {
+                go(child, set);
+            });
+        }
+        go(self, &mut set);
+        set
     }
     pub fn total_size(&self) -> usize {
-        use CTLFormula as F;
-        match self {
-            F::Atomic(_) => 1,
-            F::Top | F::Bot => 1,
-            F::And(lhs, rhs)
-            | F::Or(lhs, rhs)
-            | F::ImpliesR(lhs, rhs)
-            | F::ImpliesL(lhs, rhs)
-            | F::BiImplies(lhs, rhs)
-            | F::EU(lhs, rhs)
-            | F::AU(lhs, rhs) => 1 + lhs.total_size() + rhs.total_size(),
-            F::EX(inner)
-            | F::AX(inner)
-            | F::EF(inner)
-            | F::AF(inner)
-            | F::EG(inner)
-            | F::AG(inner)
-            | F::Neg(inner) => 1 + inner.total_size(),
-        }
+        let mut sum = 1;
+        self.for_each_child(|child| {
+            sum += child.total_size();
+        });
+        sum
     }
 }
 
