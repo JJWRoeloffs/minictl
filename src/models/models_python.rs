@@ -47,10 +47,13 @@ impl PyState {
 /// You can create them with the Model([s1, s2], {"s1": ["s1"], "s2": ["s2"]}) constructor,
 /// providing a list of states and a hashmap that represents the kripke frame.
 /// This constructor throws a value error when the arguments do not lead to a valid frame,
-/// e.g. when not all states have outgoing edges, or if edges point to unknown states.
+/// e.g. if edges point to unknown states.
 ///
 /// As a third optional argument, you can pass a list of initial states (e.g. ["s1"]),
 /// if this is not passed, the first state in the list is marked as initial.
+///
+/// By default, all states must have some outgoing transition to create a valid kripke frame,
+/// However, the parameter `allow_sink` can be passed to go around this restriction
 #[pyclass(module = "minictl", name = "Model", frozen, from_py_object)]
 #[derive(Debug, Clone)]
 pub struct PyModel {
@@ -87,16 +90,26 @@ impl PyModel {
 #[pymethods]
 impl PyModel {
     #[new]
-    #[pyo3(signature = (states, edges, initial_states=None))]
+    #[pyo3(signature = (states, edges, initial_states=None, *, allow_sink=false))]
     fn new(
         states: Vec<PyState>,
         edges: HashMap<String, Vec<String>>,
         initial_states: Option<Vec<String>>,
+        allow_sink: bool,
     ) -> PyResult<Self> {
         let first_state = states.first().ok_or(PyValueError::new_err(
             "Cannot create model without states".to_string(),
         ))?;
         let initial_states = initial_states.unwrap_or(vec![first_state.name.clone()]);
+
+        if !allow_sink {
+            if let Some((key, _v)) = edges.iter().find(|(_k, v)| v.is_empty()) {
+                return Err(PyValueError::new_err(format!(
+                    "{key} has no outgoing edges"
+                )));
+            }
+        }
+
         Self::new_bare(states, edges, initial_states).map_err(Into::into)
     }
     fn get_state(&self, which: &str) -> PyResult<PyState> {
