@@ -13,3 +13,8 @@ class TestState:
         assert state.contains("q")
         assert not state.contains("r")
         assert not state.contains("s1")
+
+    def test_eq(self):
+        state1 = State("s1", {"p"})
+        state2 = State("s1", {"p"})
+        assert state1 == state2

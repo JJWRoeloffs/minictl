@@ -95,6 +95,8 @@ class State:
 
     You can create them with the State("name", {"var1", "var2"}) constructor,
     providing the state name and a set of variables that are true in the state.
+
+    implements __eq__
     """
 
     name: str
@@ -102,6 +104,8 @@ class State:
     def __init__(self, name: str, variables: Set[str]): ...
     def contains(self, var: str) -> bool:
         """Returns whether this state has the input variable set as true"""
+
+    def __eq__(self, value: object, /) -> bool: ...
 
 class Model:
     """The python view into the Model
@@ -170,6 +174,8 @@ class GNBATransition:
 
     You can create them with the GNBATransition("name_from", "name_to", {"var1", "var2"}) constructor,
     providing the state names and a set of variables that are true in the transition.
+
+    implements __eq__
     """
 
     from_state: str
@@ -178,6 +184,8 @@ class GNBATransition:
     def __init__(self, from_state: str, to_state: str, variables: Set[str]): ...
     def contains(self, var: str) -> bool:
         """Returns whether this state has the input variable set as true"""
+
+    def __eq__(self, value: object, /) -> bool: ...
 
 class GNBA:
     """

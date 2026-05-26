@@ -17,8 +17,15 @@ impl From<ModelCreationError> for PyErr {
 ///
 /// You can create them with the State("name", {"var1", "var2"}) constructor,
 /// providing the state name and a set of variables that are true in the state.
-#[pyclass(module = "minictl", name = "State", get_all, frozen, from_py_object)]
-#[derive(Debug, Clone)]
+#[pyclass(
+    module = "minictl",
+    name = "State",
+    get_all,
+    eq,
+    frozen,
+    from_py_object
+)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PyState {
     pub name: String,
     pub variables: HashSet<String>,
@@ -40,6 +47,7 @@ impl PyState {
         self.variables.contains(var)
     }
 }
+
 /// The python view into the Model
 /// This class is frozen. Objects, once created, cannot be modified.
 /// This class does not expose any public fields. It can only be inspected through methods.
