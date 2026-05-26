@@ -49,6 +49,9 @@ class TestModelBasics:
         model = Model([self.s1, self.s2], {"s1": ["s2"], "s2": ["s2"]})
         assert model.all_initial() == {"s1"}
 
+    def test_no_outgoing_edges(self):
+        model = Model([self.s1, self.s2], {"s1": ["s2"], "s2": []}, allow_sink=True)
+
 
 class TestModelCreationErrors:
     s1 = State("s1", {"p", "q"})

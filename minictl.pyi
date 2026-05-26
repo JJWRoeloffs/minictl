@@ -111,10 +111,13 @@ class Model:
     You can create them with the Model([s1, s2], {"s1": ["s1"], "s2": ["s2"]}) constructor,
     providing a list of states and a hashmap that represents the kripke frame.
     This constructor throws a value error when the arguments do not lead to a valid frame,
-    e.g. when not all states have outgoing edges, or if edges point to unknown states.
+    e.g. if edges point to unknown states.
 
     As a third optional argument, you can pass a list of initial states (e.g. ["s1"]),
     if this is not passed, the first state in the list is marked as initial.
+
+    By default, all states must have some outgoing transition to create a valid kripke frame,
+    However, the parameter `allow_sink` can be passed to go around this restriction
     """
 
     def __init__(
@@ -122,6 +125,8 @@ class Model:
         states: List[State],
         edges: Dict[str, list[str]],
         initial_states: Optional[List[str]] = None,
+        *,
+        allow_sink: bool = False,
     ) -> None: ...
     def get_state(self, which: str) -> State:
         """Get the state with input name"""

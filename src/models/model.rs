@@ -61,9 +61,6 @@ impl Model {
         if let Some(state) = states.iter().find(|s| !edges.contains_key(&s.name)) {
             return Err(ModelCreationError::StateNotMentionned(state.name()));
         }
-        if let Some((key, _v)) = edges.iter().find(|(_k, v)| v.is_empty()) {
-            return Err(ModelCreationError::EmptyEdgeList(key.to_string()));
-        }
 
         let name_idx = states
             .iter()
