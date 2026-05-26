@@ -37,6 +37,18 @@ class TestModelBasics:
         assert model.all_except({"s2"}) == {"s1", "s3"}
         assert model.all_except({"s1", "s2", "s3"}) == set()
 
+    def test_initial_states(self):
+        model = Model(
+            [self.s1, self.s2, self.s3],
+            {"s1": ["s1"], "s2": ["s1"], "s3": ["s2"]},
+            ["s2", "s3"],
+        )
+        assert model.all_initial() == {"s2", "s3"}
+
+    def test_default_initial_states(self):
+        model = Model([self.s1, self.s2], {"s1": ["s2"], "s2": ["s2"]})
+        assert model.all_initial() == {"s1"}
+
 
 class TestModelCreationErrors:
     s1 = State("s1", {"p", "q"})

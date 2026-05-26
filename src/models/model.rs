@@ -40,6 +40,8 @@ pub struct Model {
     edges: HashMap<String, Vec<String>>,
     post_idx: Vec<Vec<usize>>,
     pre_idx: Vec<Vec<usize>>,
+    initial_states: Vec<String>,
+    initial_idx: Vec<usize>,
 }
 
 // Instead of strings, we will be dealing with usize indexes into the states vec
@@ -54,6 +56,7 @@ impl Model {
     pub fn new(
         states: Vec<State>,
         edges: HashMap<String, Vec<String>>,
+        initial_states: Vec<String>,
     ) -> Result<Self, ModelCreationError> {
         if let Some(state) = states.iter().find(|s| !edges.contains_key(&s.name)) {
             return Err(ModelCreationError::StateNotMentionned(state.name()));
@@ -92,12 +95,23 @@ impl Model {
             })
             .collect::<Result<Vec<Vec<usize>>, ModelCreationError>>()?;
         let pre_idx = reverse_graph(&post_idx);
+        let initial_idx = initial_states
+            .iter()
+            .map(|s| {
+                name_idx
+                    .get(s)
+                    .ok_or(ModelCreationError::DanglingEdge(s.to_string()))
+                    .copied()
+            })
+            .collect::<Result<Vec<usize>, ModelCreationError>>()?;
         Ok(Self {
             states,
             name_idx,
             edges,
             post_idx,
             pre_idx,
+            initial_states,
+            initial_idx,
         })
     }
     pub(crate) fn get_idx(&self, name: &str) -> Option<usize> {
@@ -117,6 +131,12 @@ impl Model {
     }
     pub fn all(&self) -> HashSet<String> {
         self.states.iter().map(|s| s.name()).collect()
+    }
+    pub fn all_initial(&self) -> HashSet<String> {
+        HashSet::from_iter(self.initial_states.iter().cloned())
+    }
+    pub fn all_initial_idx(&self) -> HashSet<usize> {
+        HashSet::from_iter(self.initial_idx.iter().copied())
     }
     pub(crate) fn all_containing_idx(&self, var: &str) -> HashSet<usize> {
         self.states

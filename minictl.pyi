@@ -11,7 +11,7 @@
 # and not all (ahum, vscode) support the proper method of adding
 # directly to `help()`
 
-from typing import Callable, List, Dict, Set
+from typing import Callable, Dict, List, Optional, Set
 
 def hello_world() -> str:
     """A method to be used exclusively for checking if everything is installed
@@ -112,9 +112,17 @@ class Model:
     providing a list of states and a hashmap that represents the kripke frame.
     This constructor throws a value error when the arguments do not lead to a valid frame,
     e.g. when not all states have outgoing edges, or if edges point to unknown states.
+
+    As a third optional argument, you can pass a list of initial states (e.g. ["s1"]),
+    if this is not passed, the first state in the list is marked as initial.
     """
 
-    def __init__(self, states: List[State], edges: Dict[str, list[str]]) -> None: ...
+    def __init__(
+        self,
+        states: List[State],
+        edges: Dict[str, list[str]],
+        initial_states: Optional[List[str]] = None,
+    ) -> None: ...
     def get_state(self, which: str) -> State:
         """Get the state with input name"""
 
@@ -146,6 +154,9 @@ class Model:
         """Get the set of names of all the states that the input state
         has outgoing connections to.
         """
+
+    def all_initial(self) -> Set[str]:
+        """Get the set of names of all the states that were marked as initial"""
 
 # fmt: off
 class CTLChecker:
