@@ -20,6 +20,8 @@ fn minictl(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<models::models_python::PyState>()?;
     m.add_class::<models::models_python::PyModel>()?;
     m.add_class::<modelcheckers::ctl_checker_python::PyCTLChecker>()?;
+    m.add_class::<modelcheckers::gnba_python::PyGNBATransition>()?;
+    m.add_class::<modelcheckers::gnba_python::PyGNBA>()?;
     m.add_function(wrap_pyfunction!(hello_world, m)?)?;
     Ok(())
 }

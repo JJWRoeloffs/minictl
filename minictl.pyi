@@ -163,6 +163,48 @@ class Model:
     def all_initial(self) -> Set[str]:
         """Get the set of names of all the states that were marked as initial"""
 
+class GNBATransition:
+    """
+    The Python view into a GNBA Transition
+    This class is frozen. Objects, once created, cannot be modified.
+
+    You can create them with the GNBATransition("name_from", "name_to", {"var1", "var2"}) constructor,
+    providing the state names and a set of variables that are true in the transition.
+    """
+
+    from_state: str
+    to_state: str
+    variables: Set[str]
+    def __init__(self, from_state: str, to_state: str, variables: Set[str]): ...
+    def contains(self, var: str) -> bool:
+        """Returns whether this state has the input variable set as true"""
+
+class GNBA:
+    """
+    The python view into a Generalised Nondeterministic Büchi Automaton
+    This class is frozen. Objects, once created, cannot be modified.
+    This class does not expose any public fields. It can only be inspected through methods.
+
+    You can create them with the GNBA(["s1", "s2"], ["s1"], transitions, [{"s2"}]) constructor,
+    providing a list of states, a second list of initial states, the transitions (of type GNBATransition),
+    and the accepting sets that together represent the GNBA
+    This constructor throws a value error when the arguments do not lead to a valid automaton,
+    e.g. if edges point to unknown states.
+    """
+
+    def __init__(
+        self,
+        states: List[str],
+        initial_states: List[str],
+        transitions: List[GNBATransition],
+        accepting_sets: List[Set[str]],
+    ) -> None: ...
+    def transition_from(self, from_state: str) -> Optional[List[GNBATransition]]:
+        """Get all the transitions originating from the passed state, or None if the state is not known"""
+
+    def transition_to(self, to_state: str) -> Optional[List[GNBATransition]]:
+        """Get all the transitions going to the passed state, or None if the state is not known"""
+
 # fmt: off
 class CTLChecker:
     """
